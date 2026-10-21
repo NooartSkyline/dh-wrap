@@ -2,11 +2,11 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "ค้นหาพนักงาน (iPhone 17)",
+      "name": "ค้นหาพนักงาน (Android)",
       "request": "launch",
       "type": "dart",
       "program": "lib/main.dart",
-      "deviceId": "8BD6C1B2-ACC6-40F0-BC47-881258F30F85"
+      "deviceId": "emulator-5554"
     }
   ]
 }
