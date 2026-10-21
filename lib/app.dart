@@ -26,7 +26,7 @@ class DhWrapApp extends StatelessWidget {
           listEmployeeBranches: ListEmployeeBranches(repository),
         ),
         child: MaterialApp(
-          title: 'ค้นหาพนักงาน',
+          title: 'เจ้าเหมียว',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light(),
           onGenerateRoute: AppRouter.onGenerateRoute,

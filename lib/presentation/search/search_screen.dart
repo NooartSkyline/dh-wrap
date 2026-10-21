@@ -42,7 +42,9 @@ class _SearchScreenState extends State<SearchScreen> {
     if (!mounted || !_scrollController.hasClients) return;
     final bloc = context.read<SearchBloc>();
     final state = bloc.state;
-    if (!state.hasMore || state.loadingMore || state.view != SearchViewStatus.loaded) {
+    if (!state.hasMore ||
+        state.loadingMore ||
+        state.view != SearchViewStatus.loaded) {
       return;
     }
     final position = _scrollController.position;
@@ -62,7 +64,10 @@ class _SearchScreenState extends State<SearchScreen> {
     );
     if (!mounted || result == null) return;
     bloc.add(
-      SearchFiltersConfirmed(status: result.status, branchLabel: result.branchLabel),
+      SearchFiltersConfirmed(
+        status: result.status,
+        branchLabel: result.branchLabel,
+      ),
     );
   }
 
@@ -167,7 +172,7 @@ class _SearchHeader extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'ค้นหาพนักงาน',
+                          'ค้นหาชื่อเจ้าเหมียว',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 26,
@@ -177,8 +182,11 @@ class _SearchHeader extends StatelessWidget {
                         ),
                         SizedBox(height: 2),
                         Text(
-                          'สมุดรายชื่อในเครื่อง',
-                          style: TextStyle(color: Color(0xFFD5E7DE), fontSize: 14),
+                          'สมุดรายชื่อเจ้าเหมียวในเครื่อง',
+                          style: TextStyle(
+                            color: Color(0xFFD5E7DE),
+                            fontSize: 14,
+                          ),
                         ),
                       ],
                     ),
@@ -202,14 +210,15 @@ class _SearchHeader extends StatelessWidget {
                 style: const TextStyle(color: AppColors.ink),
                 cursorColor: AppColors.leaf,
                 decoration: InputDecoration(
-                  hintText: 'พิมพ์ชื่อ ชื่อเล่น หรือรหัสพนักงาน',
+                  hintText: 'พิมพ์ชื่อ ชื่อเล่น หรือรหัสเจ้าเหมียว',
                   filled: true,
                   fillColor: Colors.white,
                   prefixIcon: const Icon(Icons.search, color: AppColors.leaf),
                   suffixIcon: ListenableBuilder(
                     listenable: controller,
                     builder: (context, _) {
-                      if (controller.text.isEmpty) return const SizedBox.shrink();
+                      if (controller.text.isEmpty)
+                        return const SizedBox.shrink();
                       return IconButton(
                         tooltip: 'ล้างคำค้น',
                         onPressed: onClear,
@@ -257,7 +266,11 @@ class _FilterChips extends StatelessWidget {
         child: Row(
           children: [
             ActionChip(
-              avatar: const Icon(Icons.badge_outlined, size: 18, color: AppColors.leaf),
+              avatar: const Icon(
+                Icons.badge_outlined,
+                size: 18,
+                color: AppColors.leaf,
+              ),
               label: Text(state.statusFilter.label),
               onPressed: onPressed,
             ),
@@ -299,21 +312,31 @@ class _Idle extends StatelessWidget {
             Container(
               width: 76,
               height: 76,
-              decoration: const BoxDecoration(color: AppColors.mint, shape: BoxShape.circle),
-              child: const Icon(Icons.groups_outlined, size: 36, color: AppColors.ink),
+              decoration: const BoxDecoration(
+                color: AppColors.mint,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.groups_outlined,
+                size: 36,
+                color: AppColors.ink,
+              ),
             ),
             const SizedBox(height: 20),
             if (state.activeCountReady)
               Text(
-                'พนักงานที่ปฏิบัติงาน ${groupDigits(state.activeCount)} คน',
+                'เจ้าเหมียวที่ปฏิบัติงาน ${groupDigits(state.activeCount)} คน',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.titleMedium,
               ),
             const SizedBox(height: 8),
             Text(
-              'พิมพ์ชื่อ ชื่อเล่น หรือรหัสพนักงาน หรือเลือกสาขา',
+              'พิมพ์ชื่อ ชื่อเล่น หรือรหัสเจ้าเหมียว หรือเลือกสาขา',
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyLarge?.copyWith(color: AppColors.muted, height: 1.4),
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: AppColors.muted,
+                height: 1.4,
+              ),
             ),
           ],
         ),
@@ -338,7 +361,11 @@ class _Message extends StatelessWidget {
           children: [
             Icon(icon, size: 40, color: AppColors.muted),
             const SizedBox(height: 12),
-            Text(text, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.ink)),
+            Text(
+              text,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.ink),
+            ),
           ],
         ),
       ),
@@ -361,7 +388,11 @@ class _Failure extends StatelessWidget {
           children: [
             const Icon(Icons.error_outline, size: 40, color: AppColors.idle),
             const SizedBox(height: 12),
-            Text(message, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.ink)),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.ink),
+            ),
             const SizedBox(height: 16),
             FilledButton(
               key: const Key('employee-search-retry'),

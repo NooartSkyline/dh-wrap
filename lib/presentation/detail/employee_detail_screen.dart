@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -147,6 +148,66 @@ class _EmployeeBody extends StatelessWidget {
   }
 }
 
+String _thaiName(Employee employee) {
+  return Employee.joinName(employee.firstName, employee.lastName);
+}
+
+class _CopyLine extends StatelessWidget {
+  const _CopyLine({
+    required this.text,
+    required this.tooltip,
+    required this.style,
+    required this.onDark,
+  });
+
+  final String text;
+  final String tooltip;
+  final TextStyle style;
+  final bool onDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: Text(text, style: style)),
+        _CopyButton(value: text, tooltip: tooltip, onDark: onDark),
+      ],
+    );
+  }
+}
+
+class _CopyButton extends StatelessWidget {
+  const _CopyButton({required this.value, required this.tooltip, this.onDark = false});
+
+  final String value;
+  final String tooltip;
+  final bool onDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = onDark ? Colors.white : AppColors.leaf;
+    return IconButton(
+      tooltip: 'คัดลอก$tooltip',
+      visualDensity: VisualDensity.compact,
+      style: IconButton.styleFrom(
+        foregroundColor: color,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        minimumSize: const Size(36, 36),
+        padding: EdgeInsets.zero,
+      ),
+      onPressed: () async {
+        await Clipboard.setData(ClipboardData(text: value));
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text('คัดลอก$tooltipแล้ว')));
+      },
+      icon: const Icon(Icons.copy, size: 18),
+    );
+  }
+}
+
 class _ProfileCard extends StatelessWidget {
   const _ProfileCard({required this.employee, required this.english});
 
@@ -183,32 +244,54 @@ class _ProfileCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          Text(
-            employee.displayName,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-              height: 1.2,
-            ),
-          ),
-          if (employee.nickName.isNotEmpty) ...[
-            const SizedBox(height: 4),
+          if (_thaiName(employee).isEmpty &&
+              english.isEmpty &&
+              employee.displayName == employee.personId)
             Text(
-              employee.nickName,
+              employee.displayName,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                height: 1.2,
+              ),
+            )
+          else
+            _CopyLine(
+              text: employee.displayName,
+              tooltip: _thaiName(employee).isNotEmpty ? 'ชื่อไทย' : 'ชื่ออังกฤษ',
+              onDark: true,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                height: 1.2,
+              ),
+            ),
+          if (employee.nickName.isNotEmpty)
+            _CopyLine(
+              text: employee.nickName,
+              tooltip: 'ชื่อเล่น',
+              onDark: true,
               style: const TextStyle(
                 color: Color(0xFFB7E4C7),
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
               ),
             ),
-          ],
-          if (english.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(english, style: const TextStyle(color: Color(0xFFD5E7DE), fontSize: 14)),
-          ],
-          const SizedBox(height: 4),
-          Text(employee.personId, style: const TextStyle(color: Color(0xFFD5E7DE))),
+          if (english.isNotEmpty)
+            _CopyLine(
+              text: english,
+              tooltip: 'ชื่ออังกฤษ',
+              onDark: true,
+              style: const TextStyle(color: Color(0xFFD5E7DE), fontSize: 14),
+            ),
+          _CopyLine(
+            text: employee.personId,
+            tooltip: 'รหัสพนักงาน',
+            onDark: true,
+            style: const TextStyle(color: Color(0xFFD5E7DE)),
+          ),
           const SizedBox(height: 12),
           EmployeeStatusChip(employee: employee, onDark: true),
         ],
@@ -342,28 +425,39 @@ class _ContactTile extends StatelessWidget {
       _ContactKind.phone => Icons.call_outlined,
       _ContactKind.email => Icons.mail_outline,
     };
-    return InkWell(
-      onTap: () => _open(context),
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: AppColors.mint,
-                borderRadius: BorderRadius.circular(12),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: InkWell(
+              onTap: () => _open(context),
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: AppColors.mint,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(icon, size: 18, color: AppColors.leaf),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(child: _FactTile(fact: _Fact(contact.label, contact.value))),
+                    const Icon(Icons.chevron_right, color: AppColors.muted),
+                  ],
+                ),
               ),
-              child: Icon(icon, size: 18, color: AppColors.leaf),
             ),
-            const SizedBox(width: 12),
-            Expanded(child: _FactTile(fact: _Fact(contact.label, contact.value))),
-            const Icon(Icons.chevron_right, color: AppColors.muted),
-          ],
-        ),
+          ),
+          if (contact.kind == _ContactKind.phone)
+            _CopyButton(value: contact.value, tooltip: 'เบอร์โทร'),
+        ],
       ),
     );
   }
