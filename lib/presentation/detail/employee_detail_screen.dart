@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/theme/app_theme.dart';
 import '../../domain/entities/employee.dart';
 import '../search/employee_status_chip.dart';
 import 'employee_detail_cubit.dart';
@@ -14,29 +15,39 @@ class EmployeeDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return BlocBuilder<EmployeeDetailCubit, EmployeeDetailState>(
+      builder: (context, state) {
+        return switch (state) {
+          EmployeeDetailLoading() => const _PlainScaffold(
+            child: Center(child: CircularProgressIndicator(color: AppColors.leaf)),
+          ),
+          EmployeeDetailMissing() => const _PlainScaffold(
+            child: _DetailMessage(message: 'ไม่พบพนักงาน'),
+          ),
+          EmployeeDetailFailure(:final message) => _PlainScaffold(
+            child: _DetailMessage(
+              message: message,
+              onRetry: () => context.read<EmployeeDetailCubit>().retry(),
+            ),
+          ),
+          EmployeeDetailLoaded(:final employee) => _EmployeeBody(employee: employee),
+        };
+      },
+    );
+  }
+}
+
+class _PlainScaffold extends StatelessWidget {
+  const _PlainScaffold({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.canvas,
       appBar: AppBar(title: const Text('ข้อมูลพนักงาน')),
-      body: SafeArea(
-        child: BlocBuilder<EmployeeDetailCubit, EmployeeDetailState>(
-          builder: (context, state) {
-            return switch (state) {
-              EmployeeDetailLoading() => const Center(
-                child: CircularProgressIndicator(),
-              ),
-              EmployeeDetailMissing() => const _DetailMessage(
-                message: 'ไม่พบพนักงาน',
-              ),
-              EmployeeDetailFailure(:final message) => _DetailMessage(
-                message: message,
-                onRetry: () => context.read<EmployeeDetailCubit>().retry(),
-              ),
-              EmployeeDetailLoaded(:final employee) => _EmployeeBody(
-                employee: employee,
-              ),
-            };
-          },
-        ),
-      ),
+      body: SafeArea(child: child),
     );
   }
 }
@@ -74,7 +85,6 @@ class _EmployeeBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final english = employee.displayNameEn;
     final showEnglish =
         english.isNotEmpty &&
@@ -106,73 +116,141 @@ class _EmployeeBody extends StatelessWidget {
         _Fact('วันสิ้นสุด', employee.endDateLabel),
     ];
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CircleAvatar(
-              radius: 28,
-              backgroundColor: theme.colorScheme.primaryContainer,
-              foregroundColor: theme.colorScheme.onPrimaryContainer,
-              child: Text(employee.initials),
+    return Scaffold(
+      backgroundColor: AppColors.canvas,
+      appBar: AppBar(title: const Text('ข้อมูลพนักงาน')),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+        children: [
+          _ProfileCard(employee: employee, english: showEnglish ? english : ''),
+          if (workRows.isNotEmpty)
+            _SectionCard(
+              title: 'งาน',
+              icon: Icons.work_outline,
+              children: [for (final fact in workRows) _FactTile(fact: fact)],
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(employee.displayName, style: theme.textTheme.headlineSmall),
-                  if (employee.nickName.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(employee.nickName, style: theme.textTheme.titleMedium),
-                  ],
-                  if (showEnglish) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      english,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 4),
-                  Text(employee.personId, style: theme.textTheme.bodyMedium),
-                ],
-              ),
+          if (contactRows.isNotEmpty)
+            _SectionCard(
+              title: 'ติดต่อ',
+              icon: Icons.forum_outlined,
+              children: [for (final contact in contactRows) _ContactTile(contact: contact)],
             ),
-            const SizedBox(width: 8),
-            EmployeeStatusChip(employee: employee),
-          ],
-        ),
-        if (workRows.isNotEmpty) ...[
-          const _SectionTitle('งาน'),
-          for (final fact in workRows) _FactTile(fact: fact),
+          if (dateRows.isNotEmpty)
+            _SectionCard(
+              title: 'วันที่',
+              icon: Icons.event_outlined,
+              children: [for (final fact in dateRows) _FactTile(fact: fact)],
+            ),
         ],
-        if (contactRows.isNotEmpty) ...[
-          const _SectionTitle('ติดต่อ'),
-          for (final contact in contactRows) _ContactTile(contact: contact),
-        ],
-        if (dateRows.isNotEmpty) ...[
-          const _SectionTitle('วันที่'),
-          for (final fact in dateRows) _FactTile(fact: fact),
-        ],
-      ],
+      ),
     );
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.text);
+class _ProfileCard extends StatelessWidget {
+  const _ProfileCard({required this.employee, required this.english});
 
-  final String text;
+  final Employee employee;
+  final String english;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 24, bottom: 8),
-      child: Text(text, style: Theme.of(context).textTheme.titleMedium),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.ink,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              employee.initials,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 26,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            employee.displayName,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              height: 1.2,
+            ),
+          ),
+          if (employee.nickName.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              employee.nickName,
+              style: const TextStyle(
+                color: Color(0xFFB7E4C7),
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+          if (english.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(english, style: const TextStyle(color: Color(0xFFD5E7DE), fontSize: 14)),
+          ],
+          const SizedBox(height: 4),
+          Text(employee.personId, style: const TextStyle(color: Color(0xFFD5E7DE))),
+          const SizedBox(height: 12),
+          EmployeeStatusChip(employee: employee, onDark: true),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({required this.title, required this.icon, required this.children});
+
+  final String title;
+  final IconData icon;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.line),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18, color: AppColors.leaf),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ...children,
+        ],
+      ),
     );
   }
 }
@@ -201,12 +279,18 @@ class _FactTile extends StatelessWidget {
             width: 108,
             child: Text(
               fact.label,
+              style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              fact.value,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+                color: AppColors.ink,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
-          Expanded(child: Text(fact.value)),
         ],
       ),
     );
@@ -254,14 +338,30 @@ class _ContactTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final icon = switch (contact.kind) {
+      _ContactKind.phone => Icons.call_outlined,
+      _ContactKind.email => Icons.mail_outline,
+    };
     return InkWell(
       onTap: () => _open(context),
+      borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
           children: [
+            Container(
+              width: 36,
+              height: 36,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.mint,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, size: 18, color: AppColors.leaf),
+            ),
+            const SizedBox(width: 12),
             Expanded(child: _FactTile(fact: _Fact(contact.label, contact.value))),
-            const Icon(Icons.chevron_right),
+            const Icon(Icons.chevron_right, color: AppColors.muted),
           ],
         ),
       ),

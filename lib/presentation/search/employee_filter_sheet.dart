@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_theme.dart';
 import '../../domain/entities/employee_status_filter.dart';
 
 class EmployeeFilterResult extends Equatable {
@@ -23,6 +24,10 @@ Future<EmployeeFilterResult?> showEmployeeFilterSheet({
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
+    backgroundColor: AppColors.card,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
     builder: (context) {
       return EmployeeFilterSheet(
         initialStatus: status,
@@ -90,8 +95,19 @@ class _EmployeeFilterSheetState extends State<EmployeeFilterSheet> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            const SizedBox(height: 10),
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.line,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+            ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
               child: Row(
                 children: [
                   const SizedBox(width: 48),
@@ -121,17 +137,22 @@ class _EmployeeFilterSheetState extends State<EmployeeFilterSheet> {
                 if (value == null) return;
                 setState(() => _status = value);
               },
-              child: Column(
-                children: [
-                  for (final status in EmployeeStatusFilter.values)
-                    RadioListTile<EmployeeStatusFilter>(
-                      value: status,
-                      dense: true,
-                      visualDensity: VisualDensity.compact,
-                      title: Text(status.label),
-                      selected: status == _status,
-                    ),
-                ],
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Column(
+                  children: [
+                    for (final status in EmployeeStatusFilter.values)
+                      RadioListTile<EmployeeStatusFilter>(
+                        value: status,
+                        dense: true,
+                        visualDensity: VisualDensity.compact,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        tileColor: status == _status ? AppColors.mint : null,
+                        title: Text(status.label),
+                        selected: status == _status,
+                      ),
+                  ],
+                ),
               ),
             ),
             Padding(
@@ -190,9 +211,15 @@ class _EmployeeFilterSheetState extends State<EmployeeFilterSheet> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               child: FilledButton(
                 key: const Key('employee-filter-confirm'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.ink,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(52),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
                 onPressed: _confirm,
                 child: const Text('ยืนยัน'),
               ),

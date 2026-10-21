@@ -27,6 +27,7 @@ class DhWrapApp extends StatelessWidget {
         ),
         child: MaterialApp(
           title: 'ค้นหาพนักงาน',
+          debugShowCheckedModeBanner: false,
           theme: AppTheme.light(),
           onGenerateRoute: AppRouter.onGenerateRoute,
           home: const AppGate(),
