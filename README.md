@@ -4,6 +4,17 @@
 
 ใช้ Flutter **3.38.7** ตามไฟล์ `.fvmrc`
 
+## หน้าจอ
+
+ข้อมูลในภาพเป็นตัวอย่างสมมติ ไม่ใช่พนักงานจริง
+
+<p>
+  <img src="docs/search.png" width="220" alt="หน้าค้นหา">
+  <img src="docs/results.png" width="220" alt="ผลการค้นหา">
+  <img src="docs/filter.png" width="220" alt="ตัวกรอง">
+  <img src="docs/detail.png" width="220" alt="รายละเอียด">
+</p>
+
 ## เตรียมเครื่อง
 
 ติดตั้ง [Flutter 3.38.7](https://docs.flutter.dev/install) หรือใช้ FVM:
