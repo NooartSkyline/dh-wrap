@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:dh_wrap/data/datasources/csv_employee_parser.dart';
 import 'package:dh_wrap/data/db/app_database.dart';
 import 'package:dh_wrap/data/repositories/employee_repository_impl.dart';
-import 'package:dh_wrap/data/sync/employee_snapshot_client.dart';
-import 'package:dh_wrap/data/sync/sync_endpoint_store.dart';
+import 'package:dh_wrap/data/sync/employee_database.dart';
+import 'package:dh_wrap/data/sync/employee_snapshot_source.dart';
 import 'package:dh_wrap/domain/entities/employee.dart';
 import 'package:dh_wrap/domain/entities/employee_page.dart';
 import 'package:dh_wrap/domain/entities/employee_search_query.dart';
@@ -12,6 +12,7 @@ import 'package:dh_wrap/domain/repositories/employee_repository.dart';
 import 'package:dh_wrap/domain/usecases/count_working_employees.dart';
 import 'package:dh_wrap/domain/usecases/import_employees.dart';
 import 'package:dh_wrap/domain/usecases/list_employee_branches.dart';
+import 'package:dh_wrap/domain/usecases/read_data_updated_at.dart';
 import 'package:dh_wrap/domain/usecases/search_employees.dart';
 import 'package:dh_wrap/presentation/search/search_bloc.dart';
 import 'package:dh_wrap/presentation/search/search_screen.dart';
@@ -26,17 +27,29 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 void main() {
   setUpAll(sqfliteFfiInit);
 
-  test('ที่อยู่ฐานชี้ไปที่ employees.csv', () {
+  test('ค่าเชื่อมต่อใช้โฮสต์อ่าน และไม่รับค่าที่หาย', () {
+    final settings = EmployeeDatabaseSettings.fromMap({
+      'PG_HOST': 'writer.example',
+      'PG_READ': 'reader.example',
+      'PG_PORT': '5432',
+      'PG_USER': 'postgres',
+      'PG_PASS': 'secret',
+    });
+    expect(settings.host, 'reader.example');
+    expect(settings.port, 5432);
+    expect(settings.database, 'dh_company');
+    expect(settings.schema, 'public');
+    expect(settings.table, 'employees');
+    expect(settings.password, isNotEmpty);
+
     expect(
-      csvUriFromBase('http://10.0.0.8:8787/').toString(),
-      'http://10.0.0.8:8787/employees.csv',
+      () => EmployeeDatabaseSettings.fromMap({
+        'PG_HOST': 'writer.example',
+        'PG_PORT': '5432',
+        'PG_USER': 'postgres',
+      }),
+      throwsFormatException,
     );
-    expect(
-      csvUriFromBase('10.0.0.8:8787').toString(),
-      'http://10.0.0.8:8787/employees.csv',
-    );
-    expect(() => csvUriFromBase(''), throwsFormatException);
-    expect(() => csvUriFromBase('ftp://10.0.0.8'), throwsFormatException);
   });
 
   test('อัปเดตสำเร็จแทนที่ข้อมูลเดิม และล้มเหลวแล้วของเดิมยังอยู่', () async {
@@ -54,15 +67,11 @@ void main() {
     await repository.importCsv(_csv('100', 'คนเดิม'), onProgress: (_, _) {});
     final source = _ScriptedSnapshot();
 
-    final updated = EmployeeUpdateCubit(
-      source,
-      ImportEmployees(repository),
-      'http://10.0.0.8:8787',
-    );
+    final updated = EmployeeUpdateCubit(source, ImportEmployees(repository));
     addTearDown(updated.close);
     source.next = _csv('200', 'คนใหม่');
     await updated.start();
-    expect(source.lastUri?.path, '/employees.csv');
+    expect(source.calls, 1);
     expect(updated.state, isA<EmployeeUpdateSuccess>());
     expect((updated.state as EmployeeUpdateSuccess).count, 1);
     final found = await repository.findById('200');
@@ -71,11 +80,7 @@ void main() {
     expect(await repository.findById('100'), isNull);
 
     source.failure = const FormatException('เซิร์ฟเวอร์ตอบรหัส 500');
-    final failed = EmployeeUpdateCubit(
-      source,
-      ImportEmployees(repository),
-      'http://10.0.0.8:8787',
-    );
+    final failed = EmployeeUpdateCubit(source, ImportEmployees(repository));
     addTearDown(failed.close);
     await failed.start();
     expect(failed.state, isA<EmployeeUpdateFailure>());
@@ -83,23 +88,24 @@ void main() {
     expect(stillThere?.firstName, 'คนใหม่');
   });
 
-  testWidgets('ยกเลิกอัปเดตไม่จำที่อยู่ และที่อยู่ผิดไม่เริ่ม', (tester) async {
-    final store = _MemorySyncStore();
+  testWidgets('กดอัปเดตแล้วดึงจากเครื่องนี้ทันที', (tester) async {
     final repository = _FakeEmployeeRepository();
+    final source = _ScriptedSnapshot()..next = _csv('200', 'คนใหม่');
     final bloc = SearchBloc(
       searchEmployees: SearchEmployees(repository),
       countWorkingEmployees: CountWorkingEmployees(repository),
+      readDataUpdatedAt: ReadDataUpdatedAt(repository),
       listEmployeeBranches: ListEmployeeBranches(repository),
       debounce: Duration.zero,
     );
     addTearDown(bloc.close);
 
     await tester.pumpWidget(
-      RepositoryProvider<SyncEndpointStore>.value(
-        value: store,
+      RepositoryProvider<EmployeeRepository>.value(
+        value: repository,
         child: BlocProvider.value(
           value: bloc,
-          child: const MaterialApp(home: SearchScreen()),
+          child: MaterialApp(home: SearchScreen(snapshotSource: source)),
         ),
       ),
     );
@@ -107,35 +113,24 @@ void main() {
 
     await tester.tap(find.byKey(const Key('employee-update-button')));
     await tester.pumpAndSettle();
-    expect(find.text('อัปเดตข้อมูลล่าสุด'), findsOneWidget);
 
-    await tester.enterText(
-      find.byKey(const Key('employee-sync-url')),
-      'ftp://10.0.0.8',
-    );
-    await tester.tap(find.byKey(const Key('employee-sync-start')));
-    await tester.pump();
-    expect(find.text('ที่อยู่ต้องขึ้นต้นด้วย http หรือ https'), findsOneWidget);
-    expect(store.saves, 0);
-
-    await tester.tap(find.byKey(const Key('employee-sync-cancel')));
-    await tester.pumpAndSettle();
     expect(find.text('อัปเดตข้อมูลล่าสุด'), findsNothing);
-    expect(store.value, isNull);
+    expect(find.text('กำลังดึงข้อมูลจากฐานข้อมูล'), findsNothing);
+    expect(source.calls, 1);
+    expect(find.text('อัปเดตแล้ว 0 คน'), findsOneWidget);
   });
 }
 
 class _ScriptedSnapshot implements EmployeeSnapshotSource {
   String? next;
   FormatException? failure;
-  Uri? lastUri;
+  var calls = 0;
 
   @override
-  Future<String> download(
-    Uri uri, {
+  Future<String> download({
     required void Function(int received, int? total) onProgress,
   }) async {
-    lastUri = uri;
+    calls++;
     final error = failure;
     if (error != null) throw error;
     final csv = next ?? '';
@@ -144,23 +139,12 @@ class _ScriptedSnapshot implements EmployeeSnapshotSource {
   }
 }
 
-class _MemorySyncStore implements SyncEndpointStore {
-  String? value;
-  var saves = 0;
-
-  @override
-  Future<String?> read() async => value;
-
-  @override
-  Future<void> save(String url) async {
-    saves++;
-    value = url;
-  }
-}
-
 class _FakeEmployeeRepository implements EmployeeRepository {
   @override
   Future<int> countWorking() async => 1;
+
+  @override
+  Future<DateTime?> dataUpdatedAt() async => null;
 
   @override
   Future<Employee?> findById(String personId) async => null;

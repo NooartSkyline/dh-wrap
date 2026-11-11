@@ -5,6 +5,8 @@ import '../entities/employee_search_query.dart';
 abstract class EmployeeRepository {
   Future<bool> isImported();
 
+  Future<DateTime?> dataUpdatedAt();
+
   Future<int> importCsv(
     String csvText, {
     required void Function(int done, int total) onProgress,

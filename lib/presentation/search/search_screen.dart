@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/theme/app_theme.dart';
-import '../../data/sync/employee_snapshot_client.dart';
-import '../../data/sync/sync_endpoint_store.dart';
+import '../../data/sync/employee_database.dart';
+import '../../data/sync/employee_snapshot_source.dart';
 import '../../domain/entities/employee.dart';
 import '../../domain/repositories/employee_repository.dart';
 import '../../domain/usecases/import_employees.dart';
+import '../common/data_updated_label.dart';
 import '../common/group_digits.dart';
 import '../detail/employee_detail_screen.dart';
 import '../update/employee_update_cubit.dart';
 import '../update/employee_update_screen.dart';
-import '../update/sync_endpoint_dialog.dart';
 import 'employee_card.dart';
 import 'employee_filter_sheet.dart';
 import 'search_bloc.dart';
@@ -19,7 +19,9 @@ import 'search_event.dart';
 import 'search_state.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  const SearchScreen({super.key, this.snapshotSource});
+
+  final EmployeeSnapshotSource? snapshotSource;
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -79,23 +81,12 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Future<void> _openUpdate() async {
-    final store = context.read<SyncEndpointStore>();
-    final current = await store.read();
-    if (!mounted) return;
-    final url = await showSyncEndpointDialog(
-      context: context,
-      initialUrl: current ?? '',
-    );
-    if (!mounted || url == null) return;
-    await store.save(url);
-    if (!mounted) return;
     final count = await Navigator.of(context).push<int>(
       MaterialPageRoute(
         builder: (routeContext) => BlocProvider(
           create: (_) => EmployeeUpdateCubit(
-            const EmployeeSnapshotClient(),
+            widget.snapshotSource ?? const EmployeeDatabaseSnapshot(),
             ImportEmployees(routeContext.read<EmployeeRepository>()),
-            url,
           )..start(),
           child: const EmployeeUpdateScreen(),
         ),
@@ -211,11 +202,11 @@ class _SearchHeader extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'ค้นหาชื่อเจ้าเหมียว',
                           style: TextStyle(
                             color: Colors.white,
@@ -224,13 +215,32 @@ class _SearchHeader extends StatelessWidget {
                             letterSpacing: -0.4,
                           ),
                         ),
-                        SizedBox(height: 2),
-                        Text(
+                        const SizedBox(height: 2),
+                        const Text(
                           'สมุดรายชื่อเจ้าเหมียวในเครื่อง',
                           style: TextStyle(
                             color: Color(0xFFD5E7DE),
                             fontSize: 14,
                           ),
+                        ),
+                        BlocBuilder<SearchBloc, SearchState>(
+                          buildWhen: (previous, current) =>
+                              previous.dataUpdatedAt != current.dataUpdatedAt,
+                          builder: (context, state) {
+                            final label = dataUpdatedLabel(state.dataUpdatedAt);
+                            if (label == null) return const SizedBox.shrink();
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Text(
+                                label,
+                                key: const Key('employee-data-updated-at'),
+                                style: const TextStyle(
+                                  color: Color(0xFFD5E7DE),
+                                  fontSize: 13,
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),

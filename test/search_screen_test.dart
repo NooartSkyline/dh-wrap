@@ -5,6 +5,7 @@ import 'package:dh_wrap/domain/entities/employee_status_filter.dart';
 import 'package:dh_wrap/domain/repositories/employee_repository.dart';
 import 'package:dh_wrap/domain/usecases/count_working_employees.dart';
 import 'package:dh_wrap/domain/usecases/list_employee_branches.dart';
+import 'package:dh_wrap/domain/usecases/read_data_updated_at.dart';
 import 'package:dh_wrap/domain/usecases/search_employees.dart';
 import 'package:dh_wrap/presentation/search/employee_card.dart';
 import 'package:dh_wrap/presentation/search/employee_filter_sheet.dart';
@@ -25,7 +26,10 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: SizedBox(width: 320, child: EmployeeCard(employee: employee, onTap: () {})),
+          body: SizedBox(
+            width: 320,
+            child: EmployeeCard(employee: employee, onTap: () {}),
+          ),
         ),
       ),
     );
@@ -108,11 +112,14 @@ void main() {
     expect(result?.branchLabel, 'สาขาขอนแก่น');
   });
 
-  testWidgets('จอค้นหาแสดงคำใบ้ ผลลัพธ์ ว่าง และข้อผิดพลาดจริง', (tester) async {
+  testWidgets('จอค้นหาแสดงคำใบ้ ผลลัพธ์ ว่าง และข้อผิดพลาดจริง', (
+    tester,
+  ) async {
     final repository = _FakeEmployeeRepository();
     final bloc = SearchBloc(
       searchEmployees: SearchEmployees(repository),
       countWorkingEmployees: CountWorkingEmployees(repository),
+      readDataUpdatedAt: ReadDataUpdatedAt(repository),
       listEmployeeBranches: ListEmployeeBranches(repository),
       debounce: Duration.zero,
     );
@@ -126,6 +133,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('เจ้าเหมียวที่ปฏิบัติงาน 12,637 คน'), findsOneWidget);
+    expect(find.text('อัปเดตล่าสุด 12/11/2026 00:06'), findsOneWidget);
     expect(
       find.text('พิมพ์ชื่อ ชื่อเล่น หรือรหัสเจ้าเหมียว หรือเลือกสาขา'),
       findsOneWidget,
@@ -133,7 +141,10 @@ void main() {
     expect(repository.searchCalls, 0);
 
     repository.page = EmployeePage(items: [sampleEmployee()], hasMore: false);
-    await tester.enterText(find.byKey(const Key('employee-search-field')), 'เกมส์');
+    await tester.enterText(
+      find.byKey(const Key('employee-search-field')),
+      'เกมส์',
+    );
     await tester.pump(const Duration(milliseconds: 1));
     await tester.pumpAndSettle();
 
@@ -143,13 +154,19 @@ void main() {
     expect(find.text('พงศ์พิสิทธิ์ เหินชัย'), findsOneWidget);
 
     repository.page = const EmployeePage(items: [], hasMore: false);
-    await tester.enterText(find.byKey(const Key('employee-search-field')), 'ไม่มีคนนี้');
+    await tester.enterText(
+      find.byKey(const Key('employee-search-field')),
+      'ไม่มีคนนี้',
+    );
     await tester.pump(const Duration(milliseconds: 1));
     await tester.pumpAndSettle();
     expect(find.text('ไม่พบพนักงานตามเงื่อนไข'), findsOneWidget);
 
     repository.searchError = StateError('อ่านฐานข้อมูลไม่สำเร็จ');
-    await tester.enterText(find.byKey(const Key('employee-search-field')), 'พัง');
+    await tester.enterText(
+      find.byKey(const Key('employee-search-field')),
+      'พัง',
+    );
     await tester.pump(const Duration(milliseconds: 1));
     await tester.pumpAndSettle();
     expect(find.textContaining('อ่านฐานข้อมูลไม่สำเร็จ'), findsOneWidget);
@@ -162,9 +179,13 @@ class _FakeEmployeeRepository implements EmployeeRepository {
   EmployeeSearchQuery? lastQuery;
   EmployeePage page = const EmployeePage(items: [], hasMore: false);
   Object? searchError;
+  DateTime? updatedAt = DateTime(2026, 11, 12, 0, 6);
 
   @override
   Future<int> countWorking() async => 12637;
+
+  @override
+  Future<DateTime?> dataUpdatedAt() async => updatedAt;
 
   @override
   Future<Employee?> findById(String personId) async => null;

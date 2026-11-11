@@ -112,8 +112,13 @@ udid=${device_line%%$'\t'*}
 name=${device_line#*$'\t'}
 echo "จะลงที่ $name"
 
+if [[ ! -f "$root/.env" ]]; then
+  echo "ไม่พบ .env จึงบิลด์แอปที่ต่อฐานข้อมูลไม่ได้" >&2
+  exit 1
+fi
+
 echo "กำลังบิลด์ iOS release"
-"${flutter_bin[@]}" build ios --release
+"${flutter_bin[@]}" build ios --release --dart-define-from-file=.env
 
 app="$root/build/ios/iphoneos/Runner.app"
 if [[ ! -d "$app" ]]; then

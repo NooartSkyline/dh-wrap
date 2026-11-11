@@ -34,36 +34,41 @@ void main() {
     }
   });
 
-  test('นำเข้าครั้งแรก ค้นชื่อเล่น รหัส และชื่อเต็ม แล้วเปิดซ้ำไม่ทับถ้าไม่เรียกใหม่', () async {
-    final saved = await repository.importCsv(_sampleCsv(), onProgress: (_, _) {});
+  test(
+    'นำเข้าครั้งแรก ค้นชื่อเล่น รหัส และชื่อเต็ม แล้วเปิดซ้ำไม่ทับถ้าไม่เรียกใหม่',
+    () async {
+      final saved = await repository.importCsv(
+        _sampleCsv(),
+        onProgress: (_, _) {},
+      );
 
-    expect(saved, 5);
-    expect(await repository.isImported(), isTrue);
-    expect(await repository.countWorking(), 3);
+      expect(saved, 5);
+      expect(await repository.isImported(), isTrue);
+      expect(await repository.countWorking(), 3);
 
-    final byNick = await repository.search(_query('เกมส์'));
-    expect(byNick.items.single.personId, '1034254');
-    expect(byNick.items.single.branchLabel, 'สาขาขอนแก่น');
-    expect(byNick.items.single.displayName, 'พงศ์พิสิทธิ์ เหินชัย');
+      final byNick = await repository.search(_query('เกมส์'));
+      expect(byNick.items.single.personId, '1034254');
+      expect(byNick.items.single.branchLabel, 'สาขาขอนแก่น');
+      expect(byNick.items.single.displayName, 'พงศ์พิสิทธิ์ เหินชัย');
 
-    final byId = await repository.search(_query('1034254'));
-    expect(byId.items.single.nickName, 'เกมส์');
+      final byId = await repository.search(_query('1034254'));
+      expect(byId.items.single.nickName, 'เกมส์');
 
-    final byFullName = await repository.search(_query('พงศ์พิสิทธิ์ เหินชัย'));
-    expect(byFullName.items.single.personId, '1034254');
+      final byFullName = await repository.search(
+        _query('พงศ์พิสิทธิ์ เหินชัย'),
+      );
+      expect(byFullName.items.single.personId, '1034254');
 
-    final stored = await repository.findById('1034254');
-    expect(stored?.mobilePhone, '0811111111');
-    expect(await repository.findById('ไม่มี'), isNull);
-  });
+      final stored = await repository.findById('1034254');
+      expect(stored?.mobilePhone, '0811111111');
+      expect(await repository.findById('ไม่มี'), isNull);
+    },
+  );
 
   test('ยังไม่ระบุคำค้นหรือสาขาจะไม่ดึงทั้งตาราง', () async {
     await repository.importCsv(_sampleCsv(), onProgress: (_, _) {});
 
-    expect(
-      () => repository.search(_query('')),
-      throwsArgumentError,
-    );
+    expect(() => repository.search(_query('')), throwsArgumentError);
   });
 
   test('เลือกสาขาอย่างเดียวได้ และแบ่งหน้า', () async {
@@ -94,7 +99,9 @@ void main() {
         status: EmployeeStatusFilter.notWorking,
       ),
     );
-    final statuses = page.items.map((employee) => employee.employeeStatus).toSet();
+    final statuses = page.items
+        .map((employee) => employee.employeeStatus)
+        .toSet();
     expect(statuses, {'InActive', 'Inactive'});
     expect(page.items.every((employee) => !employee.isWorking), isTrue);
   });
@@ -137,6 +144,22 @@ void main() {
       throwsFormatException,
     );
     expect(await repository.isImported(), isFalse);
+    expect(await repository.dataUpdatedAt(), isNull);
+  });
+
+  test('นำเข้าสำเร็จจำวันเวลา และไฟล์เสียไม่เปลี่ยนเวลาเดิม', () async {
+    final stamped = EmployeeRepositoryImpl(
+      database,
+      now: () => DateTime(2026, 11, 12, 0, 6, 30),
+    );
+    await stamped.importCsv(_sampleCsv(), onProgress: (_, _) {});
+    expect(await stamped.dataUpdatedAt(), DateTime(2026, 11, 12, 0, 6, 30));
+
+    await expectLater(
+      () => stamped.importCsv('first_name\nสมชาย\n', onProgress: (_, _) {}),
+      throwsFormatException,
+    );
+    expect(await stamped.dataUpdatedAt(), DateTime(2026, 11, 12, 0, 6, 30));
   });
 }
 
@@ -216,9 +239,12 @@ String _csv(List<Map<String, String>> rows) {
   }.toList();
   final buffer = StringBuffer()..writeln(header.join(','));
   for (final row in rows) {
-    buffer.writeln([
-      for (final column in header) '"${(row[column] ?? '').replaceAll('"', '""')}"',
-    ].join(','));
+    buffer.writeln(
+      [
+        for (final column in header)
+          '"${(row[column] ?? '').replaceAll('"', '""')}"',
+      ].join(','),
+    );
   }
   return buffer.toString();
 }

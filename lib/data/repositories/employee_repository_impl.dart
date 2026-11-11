@@ -10,14 +10,20 @@ import '../db/app_database.dart';
 import '../mappers/employee_mapper.dart';
 
 class EmployeeRepositoryImpl implements EmployeeRepository {
-  EmployeeRepositoryImpl(this._database, {CsvEmployeeParser? parser})
-    : _parser = parser ?? const CsvEmployeeParser();
+  EmployeeRepositoryImpl(
+    this._database, {
+    CsvEmployeeParser? parser,
+    DateTime Function()? now,
+  }) : _parser = parser ?? const CsvEmployeeParser(),
+       _now = now ?? DateTime.now;
 
   static const _importKey = 'import_complete';
+  static const _updatedKey = 'data_updated_at';
   static const _batchSize = 30;
 
   final AppDatabase _database;
   final CsvEmployeeParser _parser;
+  final DateTime Function() _now;
 
   @override
   Future<bool> isImported() async {

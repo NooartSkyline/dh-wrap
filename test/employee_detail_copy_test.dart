@@ -76,6 +76,9 @@ class _FakeRepository implements EmployeeRepository {
   Future<int> countWorking() async => 0;
 
   @override
+  Future<DateTime?> dataUpdatedAt() async => null;
+
+  @override
   Future<Employee?> findById(String personId) async => employee;
 
   @override

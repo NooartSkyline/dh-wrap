@@ -6,6 +6,7 @@ import '../../core/error_text.dart';
 import '../../domain/entities/employee_search_query.dart';
 import '../../domain/usecases/count_working_employees.dart';
 import '../../domain/usecases/list_employee_branches.dart';
+import '../../domain/usecases/read_data_updated_at.dart';
 import '../../domain/usecases/search_employees.dart';
 import 'search_event.dart';
 import 'search_state.dart';
@@ -14,10 +15,12 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
   SearchBloc({
     required SearchEmployees searchEmployees,
     required CountWorkingEmployees countWorkingEmployees,
+    required ReadDataUpdatedAt readDataUpdatedAt,
     required ListEmployeeBranches listEmployeeBranches,
     this.debounce = const Duration(milliseconds: 300),
   }) : _searchEmployees = searchEmployees,
        _countWorkingEmployees = countWorkingEmployees,
+       _readDataUpdatedAt = readDataUpdatedAt,
        _listEmployeeBranches = listEmployeeBranches,
        super(const SearchState()) {
     on<SearchOpened>(_onOpened);
@@ -30,6 +33,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
 
   final SearchEmployees _searchEmployees;
   final CountWorkingEmployees _countWorkingEmployees;
+  final ReadDataUpdatedAt _readDataUpdatedAt;
   final ListEmployeeBranches _listEmployeeBranches;
   final Duration debounce;
 
@@ -49,8 +53,16 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     final requestId = ++_countRequestId;
     try {
       final count = await _countWorkingEmployees();
+      final updatedAt = await _readDataUpdatedAt();
       if (isClosed || requestId != _countRequestId) return;
-      emit(state.copyWith(activeCount: count, activeCountReady: true));
+      emit(
+        state.copyWith(
+          activeCount: count,
+          activeCountReady: true,
+          dataUpdatedAt: updatedAt,
+          setDataUpdatedAt: true,
+        ),
+      );
     } catch (error) {
       if (isClosed || requestId != _countRequestId) return;
       if (state.view == SearchViewStatus.idle &&
@@ -201,7 +213,9 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
           items: items,
           hasMore: page.hasMore,
           loadingMore: false,
-          view: items.isEmpty ? SearchViewStatus.empty : SearchViewStatus.loaded,
+          view: items.isEmpty
+              ? SearchViewStatus.empty
+              : SearchViewStatus.loaded,
           clearError: true,
         ),
       );
@@ -219,9 +233,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
         );
         return;
       }
-      emit(
-        state.copyWith(loadingMore: false, loadMoreError: errorText(error)),
-      );
+      emit(state.copyWith(loadingMore: false, loadMoreError: errorText(error)));
     }
   }
 }

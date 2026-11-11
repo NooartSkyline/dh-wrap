@@ -18,6 +18,7 @@ class SearchState extends Equatable {
     this.loadMoreError,
     this.activeCount = 0,
     this.activeCountReady = false,
+    this.dataUpdatedAt,
   });
 
   final String query;
@@ -31,6 +32,7 @@ class SearchState extends Equatable {
   final String? loadMoreError;
   final int activeCount;
   final bool activeCountReady;
+  final DateTime? dataUpdatedAt;
 
   bool get canSearch {
     if (query.trim().isNotEmpty) return true;
@@ -53,6 +55,8 @@ class SearchState extends Equatable {
     bool clearLoadMoreError = false,
     int? activeCount,
     bool? activeCountReady,
+    DateTime? dataUpdatedAt,
+    bool setDataUpdatedAt = false,
   }) {
     return SearchState(
       query: query ?? this.query,
@@ -68,6 +72,7 @@ class SearchState extends Equatable {
           : (loadMoreError ?? this.loadMoreError),
       activeCount: activeCount ?? this.activeCount,
       activeCountReady: activeCountReady ?? this.activeCountReady,
+      dataUpdatedAt: setDataUpdatedAt ? dataUpdatedAt : this.dataUpdatedAt,
     );
   }
 
@@ -84,5 +89,6 @@ class SearchState extends Equatable {
     loadMoreError,
     activeCount,
     activeCountReady,
+    dataUpdatedAt,
   ];
 }

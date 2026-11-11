@@ -6,7 +6,8 @@
       "request": "launch",
       "type": "dart",
       "program": "lib/main.dart",
-      "deviceId": "8BD6C1B2-ACC6-40F0-BC47-881258F30F85"
+      "deviceId": "8BD6C1B2-ACC6-40F0-BC47-881258F30F85",
+      "toolArgs": ["--dart-define-from-file=.env"]
     }
   ]
 }

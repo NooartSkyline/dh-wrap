@@ -53,7 +53,7 @@ class _Progress extends StatelessWidget {
   Widget build(BuildContext context) {
     final downloading = state.phase == EmployeeUpdatePhase.download;
     final title = downloading
-        ? 'กำลังดาวน์โหลดข้อมูลล่าสุด'
+        ? 'กำลังดึงข้อมูลจากฐานข้อมูล'
         : 'กำลังบันทึกลงเครื่อง';
     final detail = downloading
         ? 'ยังไม่ลบข้อมูลเดิม'
@@ -61,6 +61,11 @@ class _Progress extends StatelessWidget {
     final progressText = state.total > 0
         ? '${groupDigits(state.done)} / ${groupDigits(state.total)}'
         : groupDigits(state.done);
+    final statusLine = !downloading
+        ? 'บันทึกแล้ว $progressText'
+        : state.total > 0
+        ? 'อ่านแล้ว $progressText'
+        : 'กำลังเชื่อมต่อและอ่านข้อมูล';
     return Padding(
       padding: const EdgeInsets.all(28),
       child: Column(
@@ -75,9 +80,7 @@ class _Progress extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              downloading
-                  ? Icons.cloud_download_outlined
-                  : Icons.inventory_2_outlined,
+              downloading ? Icons.storage_outlined : Icons.inventory_2_outlined,
               color: AppColors.ink,
               size: 32,
             ),
@@ -113,9 +116,7 @@ class _Progress extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            downloading
-                ? 'ดาวน์โหลดแล้ว $progressText'
-                : 'บันทึกแล้ว $progressText',
+            statusLine,
             style: const TextStyle(
               color: AppColors.ink,
               fontWeight: FontWeight.w700,
