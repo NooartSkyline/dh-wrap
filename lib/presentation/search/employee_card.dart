@@ -13,6 +13,7 @@ class EmployeeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final serviceLength = employee.serviceLengthLabel();
     final subtitle = [
       employee.personId,
       if (employee.positionDesc.isNotEmpty) employee.positionDesc,
@@ -64,13 +65,30 @@ class EmployeeCard extends StatelessWidget {
                         subtitle,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.ink),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: AppColors.ink,
+                        ),
                       ),
+                      if (serviceLength != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'อายุงาน $serviceLength',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.muted,
+                          ),
+                        ),
+                      ],
                       if (employee.branchLabel.isNotEmpty) ...[
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            const Icon(Icons.place_outlined, size: 15, color: AppColors.muted),
+                            const Icon(
+                              Icons.place_outlined,
+                              size: 15,
+                              color: AppColors.muted,
+                            ),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(

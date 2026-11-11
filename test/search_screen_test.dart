@@ -125,9 +125,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('พนักงานที่ปฏิบัติงาน 12,637 คน'), findsOneWidget);
+    expect(find.text('เจ้าเหมียวที่ปฏิบัติงาน 12,637 คน'), findsOneWidget);
     expect(
-      find.text('พิมพ์ชื่อ ชื่อเล่น หรือรหัสพนักงาน หรือเลือกสาขา'),
+      find.text('พิมพ์ชื่อ ชื่อเล่น หรือรหัสเจ้าเหมียว หรือเลือกสาขา'),
       findsOneWidget,
     );
     expect(repository.searchCalls, 0);

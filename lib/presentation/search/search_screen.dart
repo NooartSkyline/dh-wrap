@@ -2,9 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../data/sync/employee_snapshot_client.dart';
+import '../../data/sync/sync_endpoint_store.dart';
 import '../../domain/entities/employee.dart';
+import '../../domain/repositories/employee_repository.dart';
+import '../../domain/usecases/import_employees.dart';
 import '../common/group_digits.dart';
 import '../detail/employee_detail_screen.dart';
+import '../update/employee_update_cubit.dart';
+import '../update/employee_update_screen.dart';
+import '../update/sync_endpoint_dialog.dart';
 import 'employee_card.dart';
 import 'employee_filter_sheet.dart';
 import 'search_bloc.dart';
@@ -71,6 +78,40 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
+  Future<void> _openUpdate() async {
+    final store = context.read<SyncEndpointStore>();
+    final current = await store.read();
+    if (!mounted) return;
+    final url = await showSyncEndpointDialog(
+      context: context,
+      initialUrl: current ?? '',
+    );
+    if (!mounted || url == null) return;
+    await store.save(url);
+    if (!mounted) return;
+    final count = await Navigator.of(context).push<int>(
+      MaterialPageRoute(
+        builder: (routeContext) => BlocProvider(
+          create: (_) => EmployeeUpdateCubit(
+            const EmployeeSnapshotClient(),
+            ImportEmployees(routeContext.read<EmployeeRepository>()),
+            url,
+          )..start(),
+          child: const EmployeeUpdateScreen(),
+        ),
+      ),
+    );
+    if (!mounted || count == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('อัปเดตแล้ว ${groupDigits(count)} คน')),
+    );
+    final bloc = context.read<SearchBloc>();
+    bloc.add(const SearchOpened());
+    if (bloc.state.canSearch) {
+      bloc.add(const SearchSubmitted());
+    }
+  }
+
   void _openEmployee(Employee employee) {
     Navigator.pushNamed(
       context,
@@ -88,6 +129,7 @@ class _SearchScreenState extends State<SearchScreen> {
           _SearchHeader(
             controller: _queryController,
             onFilter: _openFilters,
+            onUpdate: _openUpdate,
             onChanged: (value) {
               context.read<SearchBloc>().add(SearchQueryChanged(value));
             },
@@ -143,12 +185,14 @@ class _SearchHeader extends StatelessWidget {
   const _SearchHeader({
     required this.controller,
     required this.onFilter,
+    required this.onUpdate,
     required this.onChanged,
     required this.onClear,
   });
 
   final TextEditingController controller;
   final VoidCallback onFilter;
+  final VoidCallback onUpdate;
   final ValueChanged<String> onChanged;
   final VoidCallback onClear;
 
@@ -192,6 +236,17 @@ class _SearchHeader extends StatelessWidget {
                     ),
                   ),
                   IconButton(
+                    key: const Key('employee-update-button'),
+                    tooltip: 'อัปเดตข้อมูล',
+                    onPressed: onUpdate,
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.white.withValues(alpha: 0.14),
+                      foregroundColor: Colors.white,
+                    ),
+                    icon: const Icon(Icons.sync),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
                     tooltip: 'ตัวกรอง',
                     onPressed: onFilter,
                     style: IconButton.styleFrom(
@@ -217,8 +272,9 @@ class _SearchHeader extends StatelessWidget {
                   suffixIcon: ListenableBuilder(
                     listenable: controller,
                     builder: (context, _) {
-                      if (controller.text.isEmpty)
+                      if (controller.text.isEmpty) {
                         return const SizedBox.shrink();
+                      }
                       return IconButton(
                         tooltip: 'ล้างคำค้น',
                         onPressed: onClear,

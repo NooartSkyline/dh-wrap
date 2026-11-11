@@ -8,7 +8,10 @@ void main() {
   const parser = CsvEmployeeParser();
 
   test('สาขาใช้ branch_name และถ้าว่างใช้ location_desc', () {
-    final withBranch = _employee({'branch_name': 'สาขาขอนแก่น', 'location_desc': 'ขอนแก่น'});
+    final withBranch = _employee({
+      'branch_name': 'สาขาขอนแก่น',
+      'location_desc': 'ขอนแก่น',
+    });
     final fallback = _employee({'branch_name': '', 'location_desc': 'ขอนแก่น'});
     final empty = _employee({'branch_name': '  ', 'location_desc': '  '});
 
@@ -18,7 +21,10 @@ void main() {
   });
 
   test('สถานะและชื่อใช้สูตรเดียว', () {
-    final active = _employee({'employee_status': 'Active', 'nick_name': 'เกมส์'});
+    final active = _employee({
+      'employee_status': 'Active',
+      'nick_name': 'เกมส์',
+    });
     final inactive = _employee({'employee_status': 'InActive'});
     final legacy = _employee({'employee_status': 'Inactive'});
 
@@ -29,6 +35,69 @@ void main() {
     expect(inactive.statusLabel, 'ไม่ปฏิบัติงาน');
     expect(legacy.statusLabel, 'ไม่ปฏิบัติงาน');
     expect(inactive.isWorking, isFalse);
+  });
+
+  test('อายุงานนับจากวันเริ่มถึงวันนี้ หรือถึงวันสิ้นสุดถ้าออกแล้ว', () {
+    final working = sampleForService(
+      status: 'Active',
+      hireDate: '2015-11-10',
+      endDate: '',
+    );
+    expect(
+      working.serviceLengthLabel(asOf: DateTime(2026, 11, 11)),
+      '11 ปี 1 วัน',
+    );
+    expect(working.serviceLengthLabel(asOf: DateTime(2026, 11, 10)), '11 ปี');
+
+    final left = sampleForService(
+      status: 'InActive',
+      hireDate: '2015-11-10',
+      endDate: '2025-03-01',
+    );
+    expect(
+      left.serviceLengthLabel(asOf: DateTime(2026, 11, 11)),
+      '9 ปี 3 เดือน 19 วัน',
+    );
+    expect(
+      sampleForService(
+        status: 'Active',
+        hireDate: '2026-01-31',
+        endDate: '',
+      ).serviceLengthLabel(asOf: DateTime(2026, 3, 1)),
+      '1 เดือน 1 วัน',
+    );
+    expect(
+      sampleForService(
+        status: 'Active',
+        hireDate: '2026-11-11',
+        endDate: '',
+      ).serviceLengthLabel(asOf: DateTime(2026, 11, 11)),
+      '0 วัน',
+    );
+    expect(
+      sampleForService(
+        status: 'InActive',
+        hireDate: '2015-11-10',
+        endDate: '',
+      ).serviceLengthLabel(),
+      isNull,
+    );
+    expect(
+      sampleForService(
+        status: 'InActive',
+        hireDate: '2026-05-01',
+        endDate: '2026-04-01',
+      ).serviceLengthLabel(),
+      isNull,
+    );
+    expect(
+      sampleForService(
+        status: 'Active',
+        hireDate: '',
+        endDate: '',
+      ).serviceLengthLabel(),
+      isNull,
+    );
   });
 
   test('วันสิ้นสุดเลือกวันทำงานสุดท้ายก่อนวันลาออก', () {
@@ -81,7 +150,10 @@ void main() {
 
     expect(employees, hasLength(1));
     expect(employees.single.positionDesc, 'PC-เอ, บี');
-    expect(EmployeeMapper.toDb(employees.single).values, isNot(contains('secret')));
+    expect(
+      EmployeeMapper.toDb(employees.single).values,
+      isNot(contains('secret')),
+    );
   });
 
   test('parser บอกคอลัมน์ที่หายและนับแถว', () {
@@ -116,10 +188,27 @@ Map<String, String> _baseRow() {
   };
 }
 
+Employee sampleForService({
+  required String status,
+  required String hireDate,
+  required String endDate,
+}) {
+  return _employee({
+    'employee_status': status,
+    'hire_date': hireDate,
+    'last_working_date': endDate,
+    'resign_date': '',
+    'termination_date': '',
+  });
+}
+
 Employee _employee(Map<String, String> overrides) {
   final row = _baseRow()..addAll(overrides);
   final csv = _csv([row]);
-  final parsed = const CsvDecoder(parseHeaders: true, dynamicTyping: false).convert(csv);
+  final parsed = const CsvDecoder(
+    parseHeaders: true,
+    dynamicTyping: false,
+  ).convert(csv);
   final first = parsed.first;
   if (first is! CsvRow) {
     throw StateError('อ่านแถวทดสอบไม่สำเร็จ');
@@ -138,9 +227,7 @@ String _csv(List<Map<String, String>> rows) {
   }.toList();
   final buffer = StringBuffer()..writeln(header.join(','));
   for (final row in rows) {
-    final cells = [
-      for (final column in header) _quote(row[column] ?? ''),
-    ];
+    final cells = [for (final column in header) _quote(row[column] ?? '')];
     buffer.writeln(cells.join(','));
   }
   return buffer.toString();

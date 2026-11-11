@@ -20,7 +20,9 @@ class EmployeeDetailScreen extends StatelessWidget {
       builder: (context, state) {
         return switch (state) {
           EmployeeDetailLoading() => const _PlainScaffold(
-            child: Center(child: CircularProgressIndicator(color: AppColors.leaf)),
+            child: Center(
+              child: CircularProgressIndicator(color: AppColors.leaf),
+            ),
           ),
           EmployeeDetailMissing() => const _PlainScaffold(
             child: _DetailMessage(message: 'ไม่พบพนักงาน'),
@@ -31,7 +33,9 @@ class EmployeeDetailScreen extends StatelessWidget {
               onRetry: () => context.read<EmployeeDetailCubit>().retry(),
             ),
           ),
-          EmployeeDetailLoaded(:final employee) => _EmployeeBody(employee: employee),
+          EmployeeDetailLoaded(:final employee) => _EmployeeBody(
+            employee: employee,
+          ),
         };
       },
     );
@@ -110,9 +114,11 @@ class _EmployeeBody extends StatelessWidget {
       if (employee.emailCompany.isNotEmpty)
         _Contact('อีเมล', employee.emailCompany, _ContactKind.email),
     ];
+    final serviceLength = employee.serviceLengthLabel();
     final dateRows = <_Fact>[
       if (employee.hireDate.isNotEmpty)
         _Fact('วันเริ่มงาน', employee.hireDateLabel),
+      if (serviceLength != null) _Fact('อายุงาน', serviceLength),
       if (!employee.isWorking && employee.endDate.isNotEmpty)
         _Fact('วันสิ้นสุด', employee.endDateLabel),
     ];
@@ -134,7 +140,10 @@ class _EmployeeBody extends StatelessWidget {
             _SectionCard(
               title: 'ติดต่อ',
               icon: Icons.forum_outlined,
-              children: [for (final contact in contactRows) _ContactTile(contact: contact)],
+              children: [
+                for (final contact in contactRows)
+                  _ContactTile(contact: contact),
+              ],
             ),
           if (dateRows.isNotEmpty)
             _SectionCard(
@@ -178,7 +187,11 @@ class _CopyLine extends StatelessWidget {
 }
 
 class _CopyButton extends StatelessWidget {
-  const _CopyButton({required this.value, required this.tooltip, this.onDark = false});
+  const _CopyButton({
+    required this.value,
+    required this.tooltip,
+    this.onDark = false,
+  });
 
   final String value;
   final String tooltip;
@@ -259,7 +272,9 @@ class _ProfileCard extends StatelessWidget {
           else
             _CopyLine(
               text: employee.displayName,
-              tooltip: _thaiName(employee).isNotEmpty ? 'ชื่อไทย' : 'ชื่ออังกฤษ',
+              tooltip: _thaiName(employee).isNotEmpty
+                  ? 'ชื่อไทย'
+                  : 'ชื่ออังกฤษ',
               onDark: true,
               style: const TextStyle(
                 color: Colors.white,
@@ -301,7 +316,11 @@ class _ProfileCard extends StatelessWidget {
 }
 
 class _SectionCard extends StatelessWidget {
-  const _SectionCard({required this.title, required this.icon, required this.children});
+  const _SectionCard({
+    required this.title,
+    required this.icon,
+    required this.children,
+  });
 
   final String title;
   final IconData icon;
@@ -324,10 +343,7 @@ class _SectionCard extends StatelessWidget {
             children: [
               Icon(icon, size: 18, color: AppColors.leaf),
               const SizedBox(width: 8),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
+              Text(title, style: Theme.of(context).textTheme.titleMedium),
             ],
           ),
           const SizedBox(height: 6),
@@ -362,7 +378,9 @@ class _FactTile extends StatelessWidget {
             width: 108,
             child: Text(
               fact.label,
-              style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppColors.muted,
+              ),
             ),
           ),
           Expanded(
@@ -416,7 +434,9 @@ class _ContactTile extends StatelessWidget {
   }
 
   void _showMessage(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -448,7 +468,11 @@ class _ContactTile extends StatelessWidget {
                       child: Icon(icon, size: 18, color: AppColors.leaf),
                     ),
                     const SizedBox(width: 12),
-                    Expanded(child: _FactTile(fact: _Fact(contact.label, contact.value))),
+                    Expanded(
+                      child: _FactTile(
+                        fact: _Fact(contact.label, contact.value),
+                      ),
+                    ),
                     const Icon(Icons.chevron_right, color: AppColors.muted),
                   ],
                 ),

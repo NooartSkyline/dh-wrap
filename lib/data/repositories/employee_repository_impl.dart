@@ -6,7 +6,6 @@ import '../../domain/entities/employee_search_query.dart';
 import '../../domain/entities/employee_status_filter.dart';
 import '../../domain/repositories/employee_repository.dart';
 import '../datasources/csv_employee_parser.dart';
-import '../datasources/employee_csv_asset.dart';
 import '../db/app_database.dart';
 import '../mappers/employee_mapper.dart';
 
