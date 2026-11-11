@@ -18,5 +18,7 @@ abstract class EmployeeRepository {
 
   Future<int> countWorking();
 
+  Future<Set<String>> listPersonIds();
+
   Future<List<String>> listBranches();
 }

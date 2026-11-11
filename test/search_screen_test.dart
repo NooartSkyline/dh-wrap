@@ -132,10 +132,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('เจ้าเหมียวที่ปฏิบัติงาน 12,637 คน'), findsOneWidget);
+    expect(find.text('ที่ปฏิบัติงาน 12,637 คน'), findsOneWidget);
     expect(find.text('อัปเดตล่าสุด 12/11/2026 00:06'), findsOneWidget);
     expect(
-      find.text('พิมพ์ชื่อ ชื่อเล่น หรือรหัสเจ้าเหมียว หรือเลือกสาขา'),
+      find.text('พิมพ์ชื่อ ชื่อเล่น หรือรหัส หรือเลือกสาขา'),
       findsOneWidget,
     );
     expect(repository.searchCalls, 0);
@@ -200,6 +200,9 @@ class _FakeEmployeeRepository implements EmployeeRepository {
 
   @override
   Future<bool> isImported() async => true;
+
+  @override
+  Future<Set<String>> listPersonIds() async => {};
 
   @override
   Future<List<String>> listBranches() async => const ['สาขาขอนแก่น'];

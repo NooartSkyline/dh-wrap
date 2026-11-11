@@ -17,7 +17,11 @@ class AppDatabase {
     final factory = _factory ?? databaseFactory;
     final opened = await factory.openDatabase(
       path,
-      options: OpenDatabaseOptions(version: 1, onCreate: _onCreate),
+      options: OpenDatabaseOptions(
+        version: 2,
+        onCreate: _onCreate,
+        onUpgrade: _onUpgrade,
+      ),
     );
     _database = opened;
     return opened;
@@ -72,6 +76,24 @@ class AppDatabase {
       CREATE TABLE app_meta (
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL
+      )
+    ''');
+    await _createUpdateHistory(db);
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) await _createUpdateHistory(db);
+  }
+
+  Future<void> _createUpdateHistory(Database db) {
+    return db.execute('''
+      CREATE TABLE IF NOT EXISTS update_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        updated_at TEXT NOT NULL,
+        previous_count INTEGER NOT NULL,
+        added_count INTEGER NOT NULL,
+        removed_count INTEGER NOT NULL,
+        current_count INTEGER NOT NULL
       )
     ''');
   }

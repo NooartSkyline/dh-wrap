@@ -6,6 +6,13 @@ sealed class EmployeeUpdateState extends Equatable {
   const EmployeeUpdateState();
 }
 
+class EmployeeUpdateReady extends EmployeeUpdateState {
+  const EmployeeUpdateReady();
+
+  @override
+  List<Object?> get props => [];
+}
+
 class EmployeeUpdateInProgress extends EmployeeUpdateState {
   const EmployeeUpdateInProgress({
     required this.phase,
@@ -30,12 +37,47 @@ class EmployeeUpdateInProgress extends EmployeeUpdateState {
 }
 
 class EmployeeUpdateSuccess extends EmployeeUpdateState {
-  const EmployeeUpdateSuccess(this.count);
+  const EmployeeUpdateSuccess(this.summary, {this.historyError});
 
-  final int count;
+  final EmployeeUpdateSummary summary;
+  final String? historyError;
 
   @override
-  List<Object?> get props => [count];
+  List<Object?> get props => [summary, historyError];
+}
+
+class EmployeeUpdateSummary extends Equatable {
+  const EmployeeUpdateSummary({
+    required this.previousCount,
+    required this.addedCount,
+    required this.removedCount,
+    required this.currentCount,
+  });
+
+  final int previousCount;
+  final int addedCount;
+  final int removedCount;
+  final int currentCount;
+
+  @override
+  List<Object?> get props => [
+    previousCount,
+    addedCount,
+    removedCount,
+    currentCount,
+  ];
+}
+
+EmployeeUpdateSummary compareEmployeeIds(
+  Set<String> before,
+  Set<String> after,
+) {
+  return EmployeeUpdateSummary(
+    previousCount: before.length,
+    addedCount: after.difference(before).length,
+    removedCount: before.difference(after).length,
+    currentCount: after.length,
+  );
 }
 
 class EmployeeUpdateFailure extends EmployeeUpdateState {

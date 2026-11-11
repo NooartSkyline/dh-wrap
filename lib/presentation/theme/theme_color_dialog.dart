@@ -115,7 +115,7 @@ class _ThemeColorDialogState extends State<_ThemeColorDialog> {
         FilledButton(
           key: const Key('employee-theme-apply'),
           onPressed: () => Navigator.pop(context, picked),
-          child: const Text('ใช้สีนี้'),
+          child: const Text('ยืนยัน'),
         ),
       ],
     );

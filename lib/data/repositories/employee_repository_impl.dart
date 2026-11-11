@@ -205,6 +205,16 @@ class EmployeeRepositoryImpl implements EmployeeRepository {
   }
 
   @override
+  Future<Set<String>> listPersonIds() async {
+    final db = await _database.open();
+    final rows = await db.query('employees', columns: ['person_id']);
+    return {
+      for (final row in rows)
+        if (row['person_id'] != null) '${row['person_id']}',
+    };
+  }
+
+  @override
   Future<List<String>> listBranches() async {
     final db = await _database.open();
     final rows = await db.rawQuery('''

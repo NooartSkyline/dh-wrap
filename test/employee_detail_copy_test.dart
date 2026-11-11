@@ -91,6 +91,9 @@ class _FakeRepository implements EmployeeRepository {
   Future<bool> isImported() async => true;
 
   @override
+  Future<Set<String>> listPersonIds() async => {};
+
+  @override
   Future<List<String>> listBranches() async => const [];
 
   @override

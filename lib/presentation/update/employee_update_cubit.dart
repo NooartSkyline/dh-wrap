@@ -2,21 +2,24 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/error_text.dart';
 import '../../data/sync/employee_snapshot_source.dart';
+import '../../data/update/update_history_store.dart';
 import '../../domain/usecases/import_employees.dart';
+import '../../domain/usecases/list_employee_ids.dart';
 import 'employee_update_state.dart';
 
 class EmployeeUpdateCubit extends Cubit<EmployeeUpdateState> {
-  EmployeeUpdateCubit(this._client, this._importEmployees)
-    : super(
-        const EmployeeUpdateInProgress(
-          phase: EmployeeUpdatePhase.download,
-          done: 0,
-          total: 0,
-        ),
-      );
+  EmployeeUpdateCubit(
+    this._client,
+    this._importEmployees,
+    this._listEmployeeIds, {
+    UpdateHistoryStore? history,
+  }) : _history = history,
+       super(const EmployeeUpdateReady());
 
   final EmployeeSnapshotSource _client;
   final ImportEmployees _importEmployees;
+  final ListEmployeeIds _listEmployeeIds;
+  final UpdateHistoryStore? _history;
   var _running = false;
 
   Future<void> start() async {
@@ -54,7 +57,9 @@ class EmployeeUpdateCubit extends Cubit<EmployeeUpdateState> {
           total: 0,
         ),
       );
-      final count = await _importEmployees(
+      final before = await _listEmployeeIds();
+      if (isClosed) return;
+      await _importEmployees(
         csvText,
         onProgress: (done, total) {
           if (isClosed) return;
@@ -68,7 +73,25 @@ class EmployeeUpdateCubit extends Cubit<EmployeeUpdateState> {
         },
       );
       if (isClosed) return;
-      emit(EmployeeUpdateSuccess(count));
+      final after = await _listEmployeeIds();
+      if (isClosed) return;
+      final summary = compareEmployeeIds(before, after);
+      String? historyError;
+      final history = _history;
+      if (history != null) {
+        try {
+          await history.add(
+            previousCount: summary.previousCount,
+            addedCount: summary.addedCount,
+            removedCount: summary.removedCount,
+            currentCount: summary.currentCount,
+          );
+        } catch (error) {
+          historyError = errorText(error);
+        }
+      }
+      if (isClosed) return;
+      emit(EmployeeUpdateSuccess(summary, historyError: historyError));
     } catch (error) {
       if (isClosed) return;
       emit(EmployeeUpdateFailure(errorText(error)));

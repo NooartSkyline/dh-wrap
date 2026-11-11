@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../data/datasources/employee_csv_asset.dart';
+import '../../data/update/update_history_store.dart';
+import '../../data/usage/usage_hint_store.dart';
 import '../../domain/repositories/employee_repository.dart';
 import '../../domain/usecases/import_employees.dart';
 import '../../domain/usecases/is_employee_data_imported.dart';
@@ -41,7 +43,10 @@ class AppGate extends StatelessWidget {
                 child: const ImportScreen(),
               ),
             ),
-            AppGateReady() => const SearchScreen(),
+            AppGateReady() => SearchScreen(
+              usageHints: context.read<UsageHintStore>(),
+              updateHistory: context.read<UpdateHistoryStore>(),
+            ),
             AppGateFailure(:final message) => _GateMessage(
               title: 'เปิดข้อมูลไม่สำเร็จ',
               message: message,
