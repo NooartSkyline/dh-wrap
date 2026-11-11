@@ -40,6 +40,20 @@ class EmployeeRepositoryImpl implements EmployeeRepository {
   }
 
   @override
+  Future<DateTime?> dataUpdatedAt() async {
+    final db = await _database.open();
+    final rows = await db.query(
+      'app_meta',
+      columns: ['value'],
+      where: 'key = ?',
+      whereArgs: [_updatedKey],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return DateTime.tryParse('${rows.first['value']}');
+  }
+
+  @override
   Future<int> importCsv(
     String csvText, {
     required void Function(int done, int total) onProgress,
@@ -77,10 +91,22 @@ class EmployeeRepositoryImpl implements EmployeeRepository {
         'key': _importKey,
         'value': '1',
       }, conflictAlgorithm: ConflictAlgorithm.replace);
+      await txn.insert('app_meta', {
+        'key': _updatedKey,
+        'value': _storedStamp(_now()),
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
     });
 
     onProgress(saved, total);
     return saved;
+  }
+
+  String _storedStamp(DateTime value) {
+    final local = value.toLocal();
+    String two(int number) => number.toString().padLeft(2, '0');
+    final year = local.year.toString().padLeft(4, '0');
+    return '$year-${two(local.month)}-${two(local.day)}'
+        'T${two(local.hour)}:${two(local.minute)}:${two(local.second)}';
   }
 
   Future<int> _insertBatch(Transaction txn, List<Employee> employees) async {

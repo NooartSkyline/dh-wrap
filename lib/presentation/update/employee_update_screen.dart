@@ -21,7 +21,7 @@ class EmployeeUpdateScreen extends StatelessWidget {
         return PopScope(
           canPop: state is EmployeeUpdateFailure,
           child: Scaffold(
-            backgroundColor: AppColors.canvas,
+            backgroundColor: AppColors.of(context).canvas,
             body: SafeArea(
               child: switch (state) {
                 EmployeeUpdateInProgress() => _Progress(state: state),
@@ -75,21 +75,21 @@ class _Progress extends StatelessWidget {
           Container(
             width: 72,
             height: 72,
-            decoration: const BoxDecoration(
-              color: AppColors.mint,
+            decoration: BoxDecoration(
+              color: AppColors.of(context).mint,
               shape: BoxShape.circle,
             ),
             child: Icon(
               downloading ? Icons.storage_outlined : Icons.inventory_2_outlined,
-              color: AppColors.ink,
+              color: AppColors.of(context).ink,
               size: 32,
             ),
           ),
           const SizedBox(height: 20),
           Text(
             title,
-            style: const TextStyle(
-              color: AppColors.ink,
+            style: TextStyle(
+              color: AppColors.of(context).ink,
               fontSize: 28,
               fontWeight: FontWeight.w700,
               height: 1.2,
@@ -98,8 +98,8 @@ class _Progress extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             detail,
-            style: const TextStyle(
-              color: AppColors.muted,
+            style: TextStyle(
+              color: AppColors.of(context).muted,
               fontSize: 16,
               height: 1.4,
             ),
@@ -110,15 +110,15 @@ class _Progress extends StatelessWidget {
             child: LinearProgressIndicator(
               value: state.progress,
               minHeight: 8,
-              backgroundColor: AppColors.line,
-              color: AppColors.leaf,
+              backgroundColor: AppColors.of(context).line,
+              color: AppColors.of(context).leaf,
             ),
           ),
           const SizedBox(height: 12),
           Text(
             statusLine,
-            style: const TextStyle(
-              color: AppColors.ink,
+            style: TextStyle(
+              color: AppColors.of(context).ink,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -142,12 +142,16 @@ class _Failure extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Spacer(),
-          const Icon(Icons.error_outline, color: AppColors.idle, size: 40),
+          Icon(
+            Icons.error_outline,
+            color: AppColors.of(context).idle,
+            size: 40,
+          ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'อัปเดตไม่สำเร็จ',
             style: TextStyle(
-              color: AppColors.ink,
+              color: AppColors.of(context).ink,
               fontSize: 28,
               fontWeight: FontWeight.w700,
             ),
@@ -155,17 +159,17 @@ class _Failure extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             message,
-            style: const TextStyle(color: AppColors.ink, height: 1.4),
+            style: TextStyle(color: AppColors.of(context).ink, height: 1.4),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'ข้อมูลเดิมในเครื่องยังอยู่',
-            style: TextStyle(color: AppColors.muted, height: 1.4),
+            style: TextStyle(color: AppColors.of(context).muted, height: 1.4),
           ),
           const SizedBox(height: 24),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: AppColors.ink,
+              backgroundColor: AppColors.of(context).ink,
               foregroundColor: Colors.white,
               minimumSize: const Size.fromHeight(52),
               shape: RoundedRectangleBorder(

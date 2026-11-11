@@ -24,7 +24,7 @@ Future<EmployeeFilterResult?> showEmployeeFilterSheet({
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    backgroundColor: AppColors.card,
+    backgroundColor: AppColors.of(context).card,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
@@ -101,7 +101,7 @@ class _EmployeeFilterSheetState extends State<EmployeeFilterSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.line,
+                  color: AppColors.of(context).line,
                   borderRadius: BorderRadius.circular(99),
                 ),
               ),
@@ -147,7 +147,7 @@ class _EmployeeFilterSheetState extends State<EmployeeFilterSheet> {
                         dense: true,
                         visualDensity: VisualDensity.compact,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        tileColor: status == _status ? AppColors.mint : null,
+                        tileColor: status == _status ? AppColors.of(context).mint : null,
                         title: Text(status.label),
                         selected: status == _status,
                       ),
@@ -215,7 +215,7 @@ class _EmployeeFilterSheetState extends State<EmployeeFilterSheet> {
               child: FilledButton(
                 key: const Key('employee-filter-confirm'),
                 style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.ink,
+                  backgroundColor: AppColors.of(context).ink,
                   foregroundColor: Colors.white,
                   minimumSize: const Size.fromHeight(52),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),

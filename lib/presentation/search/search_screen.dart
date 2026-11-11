@@ -12,6 +12,8 @@ import '../common/group_digits.dart';
 import '../detail/employee_detail_screen.dart';
 import '../update/employee_update_cubit.dart';
 import '../update/employee_update_screen.dart';
+import '../theme/theme_color_dialog.dart';
+import '../theme/theme_cubit.dart';
 import 'employee_card.dart';
 import 'employee_filter_sheet.dart';
 import 'search_bloc.dart';
@@ -103,6 +105,15 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+  Future<void> _openTheme() async {
+    final picked = await showThemeColorDialog(
+      context: context,
+      seed: AppColors.of(context).seed,
+    );
+    if (!mounted || picked == null) return;
+    await context.read<ThemeCubit>().select(picked);
+  }
+
   void _openEmployee(Employee employee) {
     Navigator.pushNamed(
       context,
@@ -114,13 +125,14 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.canvas,
+      backgroundColor: AppColors.of(context).canvas,
       body: Column(
         children: [
           _SearchHeader(
             controller: _queryController,
             onFilter: _openFilters,
             onUpdate: _openUpdate,
+            onTheme: _openTheme,
             onChanged: (value) {
               context.read<SearchBloc>().add(SearchQueryChanged(value));
             },
@@ -147,8 +159,10 @@ class _SearchScreenState extends State<SearchScreen> {
               builder: (context, state) {
                 return switch (state.view) {
                   SearchViewStatus.idle => _Idle(state: state),
-                  SearchViewStatus.loading => const Center(
-                    child: CircularProgressIndicator(color: AppColors.leaf),
+                  SearchViewStatus.loading => Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.of(context).leaf,
+                    ),
                   ),
                   SearchViewStatus.empty => const _Message(
                     icon: Icons.search_off,
@@ -177,6 +191,7 @@ class _SearchHeader extends StatelessWidget {
     required this.controller,
     required this.onFilter,
     required this.onUpdate,
+    required this.onTheme,
     required this.onChanged,
     required this.onClear,
   });
@@ -184,14 +199,15 @@ class _SearchHeader extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onFilter;
   final VoidCallback onUpdate;
+  final VoidCallback onTheme;
   final ValueChanged<String> onChanged;
   final VoidCallback onClear;
 
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: AppColors.ink,
+      decoration: BoxDecoration(
+        color: AppColors.of(context).ink,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
       ),
       child: SafeArea(
@@ -216,10 +232,10 @@ class _SearchHeader extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 2),
-                        const Text(
+                        Text(
                           'สมุดรายชื่อเจ้าเหมียวในเครื่อง',
                           style: TextStyle(
-                            color: Color(0xFFD5E7DE),
+                            color: AppColors.of(context).onInkMuted,
                             fontSize: 14,
                           ),
                         ),
@@ -234,8 +250,8 @@ class _SearchHeader extends StatelessWidget {
                               child: Text(
                                 label,
                                 key: const Key('employee-data-updated-at'),
-                                style: const TextStyle(
-                                  color: Color(0xFFD5E7DE),
+                                style: TextStyle(
+                                  color: AppColors.of(context).onInkMuted,
                                   fontSize: 13,
                                 ),
                               ),
@@ -245,6 +261,17 @@ class _SearchHeader extends StatelessWidget {
                       ],
                     ),
                   ),
+                  IconButton(
+                    key: const Key('employee-theme-button'),
+                    tooltip: 'สีธีม',
+                    onPressed: onTheme,
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.white.withValues(alpha: 0.14),
+                      foregroundColor: Colors.white,
+                    ),
+                    icon: const Icon(Icons.palette_outlined),
+                  ),
+                  const SizedBox(width: 8),
                   IconButton(
                     key: const Key('employee-update-button'),
                     tooltip: 'อัปเดตข้อมูล',
@@ -272,13 +299,16 @@ class _SearchHeader extends StatelessWidget {
                 key: const Key('employee-search-field'),
                 controller: controller,
                 textInputAction: TextInputAction.search,
-                style: const TextStyle(color: AppColors.ink),
-                cursorColor: AppColors.leaf,
+                style: TextStyle(color: AppColors.of(context).ink),
+                cursorColor: AppColors.of(context).leaf,
                 decoration: InputDecoration(
                   hintText: 'พิมพ์ชื่อ ชื่อเล่น หรือรหัสเจ้าเหมียว',
                   filled: true,
                   fillColor: Colors.white,
-                  prefixIcon: const Icon(Icons.search, color: AppColors.leaf),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: AppColors.of(context).leaf,
+                  ),
                   suffixIcon: ListenableBuilder(
                     listenable: controller,
                     builder: (context, _) {
@@ -288,7 +318,10 @@ class _SearchHeader extends StatelessWidget {
                       return IconButton(
                         tooltip: 'ล้างคำค้น',
                         onPressed: onClear,
-                        icon: const Icon(Icons.close, color: AppColors.muted),
+                        icon: Icon(
+                          Icons.close,
+                          color: AppColors.of(context).muted,
+                        ),
                       );
                     },
                   ),
@@ -332,10 +365,10 @@ class _FilterChips extends StatelessWidget {
         child: Row(
           children: [
             ActionChip(
-              avatar: const Icon(
+              avatar: Icon(
                 Icons.badge_outlined,
                 size: 18,
-                color: AppColors.leaf,
+                color: AppColors.of(context).leaf,
               ),
               label: Text(state.statusFilter.label),
               onPressed: onPressed,
@@ -378,14 +411,14 @@ class _Idle extends StatelessWidget {
             Container(
               width: 76,
               height: 76,
-              decoration: const BoxDecoration(
-                color: AppColors.mint,
+              decoration: BoxDecoration(
+                color: AppColors.of(context).mint,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.groups_outlined,
                 size: 36,
-                color: AppColors.ink,
+                color: AppColors.of(context).ink,
               ),
             ),
             const SizedBox(height: 20),
@@ -400,7 +433,7 @@ class _Idle extends StatelessWidget {
               'พิมพ์ชื่อ ชื่อเล่น หรือรหัสเจ้าเหมียว หรือเลือกสาขา',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyLarge?.copyWith(
-                color: AppColors.muted,
+                color: AppColors.of(context).muted,
                 height: 1.4,
               ),
             ),
@@ -425,12 +458,12 @@ class _Message extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 40, color: AppColors.muted),
+            Icon(icon, size: 40, color: AppColors.of(context).muted),
             const SizedBox(height: 12),
             Text(
               text,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.ink),
+              style: TextStyle(color: AppColors.of(context).ink),
             ),
           ],
         ),
@@ -452,12 +485,16 @@ class _Failure extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, size: 40, color: AppColors.idle),
+            Icon(
+              Icons.error_outline,
+              size: 40,
+              color: AppColors.of(context).idle,
+            ),
             const SizedBox(height: 12),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.ink),
+              style: TextStyle(color: AppColors.of(context).ink),
             ),
             const SizedBox(height: 16),
             FilledButton(

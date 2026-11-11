@@ -19,9 +19,11 @@ class EmployeeDetailScreen extends StatelessWidget {
     return BlocBuilder<EmployeeDetailCubit, EmployeeDetailState>(
       builder: (context, state) {
         return switch (state) {
-          EmployeeDetailLoading() => const _PlainScaffold(
+          EmployeeDetailLoading() => _PlainScaffold(
             child: Center(
-              child: CircularProgressIndicator(color: AppColors.leaf),
+              child: CircularProgressIndicator(
+                color: AppColors.of(context).leaf,
+              ),
             ),
           ),
           EmployeeDetailMissing() => const _PlainScaffold(
@@ -50,7 +52,7 @@ class _PlainScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.canvas,
+      backgroundColor: AppColors.of(context).canvas,
       appBar: AppBar(title: const Text('ข้อมูลพนักงาน')),
       body: SafeArea(child: child),
     );
@@ -124,7 +126,7 @@ class _EmployeeBody extends StatelessWidget {
     ];
 
     return Scaffold(
-      backgroundColor: AppColors.canvas,
+      backgroundColor: AppColors.of(context).canvas,
       appBar: AppBar(title: const Text('ข้อมูลพนักงาน')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
@@ -199,7 +201,7 @@ class _CopyButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = onDark ? Colors.white : AppColors.leaf;
+    final color = onDark ? Colors.white : AppColors.of(context).leaf;
     return IconButton(
       tooltip: 'คัดลอก$tooltip',
       visualDensity: VisualDensity.compact,
@@ -233,7 +235,7 @@ class _ProfileCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.ink,
+        color: AppColors.of(context).ink,
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
@@ -288,8 +290,8 @@ class _ProfileCard extends StatelessWidget {
               text: employee.nickName,
               tooltip: 'ชื่อเล่น',
               onDark: true,
-              style: const TextStyle(
-                color: Color(0xFFB7E4C7),
+              style: TextStyle(
+                color: AppColors.of(context).onInkMuted,
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
               ),
@@ -299,13 +301,16 @@ class _ProfileCard extends StatelessWidget {
               text: english,
               tooltip: 'ชื่ออังกฤษ',
               onDark: true,
-              style: const TextStyle(color: Color(0xFFD5E7DE), fontSize: 14),
+              style: TextStyle(
+                color: AppColors.of(context).onInkMuted,
+                fontSize: 14,
+              ),
             ),
           _CopyLine(
             text: employee.personId,
             tooltip: 'รหัสพนักงาน',
             onDark: true,
-            style: const TextStyle(color: Color(0xFFD5E7DE)),
+            style: TextStyle(color: AppColors.of(context).onInkMuted),
           ),
           const SizedBox(height: 12),
           EmployeeStatusChip(employee: employee, onDark: true),
@@ -332,16 +337,16 @@ class _SectionCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: AppColors.of(context).card,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.line),
+        border: Border.all(color: AppColors.of(context).line),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, size: 18, color: AppColors.leaf),
+              Icon(icon, size: 18, color: AppColors.of(context).leaf),
               const SizedBox(width: 8),
               Text(title, style: Theme.of(context).textTheme.titleMedium),
             ],
@@ -379,7 +384,7 @@ class _FactTile extends StatelessWidget {
             child: Text(
               fact.label,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: AppColors.muted,
+                color: AppColors.of(context).muted,
               ),
             ),
           ),
@@ -387,7 +392,7 @@ class _FactTile extends StatelessWidget {
             child: Text(
               fact.value,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: AppColors.ink,
+                color: AppColors.of(context).ink,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -462,10 +467,14 @@ class _ContactTile extends StatelessWidget {
                       height: 36,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: AppColors.mint,
+                        color: AppColors.of(context).mint,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(icon, size: 18, color: AppColors.leaf),
+                      child: Icon(
+                        icon,
+                        size: 18,
+                        color: AppColors.of(context).leaf,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -473,7 +482,10 @@ class _ContactTile extends StatelessWidget {
                         fact: _Fact(contact.label, contact.value),
                       ),
                     ),
-                    const Icon(Icons.chevron_right, color: AppColors.muted),
+                    Icon(
+                      Icons.chevron_right,
+                      color: AppColors.of(context).muted,
+                    ),
                   ],
                 ),
               ),

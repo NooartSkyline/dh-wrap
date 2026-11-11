@@ -21,10 +21,10 @@ class EmployeeCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
       child: Material(
-        color: AppColors.card,
+        color: AppColors.of(context).card,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
-          side: const BorderSide(color: AppColors.line),
+          side: BorderSide(color: AppColors.of(context).line),
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -53,7 +53,7 @@ class EmployeeCard extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: AppColors.leaf,
+                            color: AppColors.of(context).leaf,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -66,7 +66,7 @@ class EmployeeCard extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: AppColors.ink,
+                          color: AppColors.of(context).ink,
                         ),
                       ),
                       if (serviceLength != null) ...[
@@ -76,7 +76,7 @@ class EmployeeCard extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: AppColors.muted,
+                            color: AppColors.of(context).muted,
                           ),
                         ),
                       ],
@@ -84,10 +84,10 @@ class EmployeeCard extends StatelessWidget {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.place_outlined,
                               size: 15,
-                              color: AppColors.muted,
+                              color: AppColors.of(context).muted,
                             ),
                             const SizedBox(width: 4),
                             Expanded(
@@ -96,7 +96,7 @@ class EmployeeCard extends StatelessWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: theme.textTheme.bodySmall?.copyWith(
-                                  color: AppColors.muted,
+                                  color: AppColors.of(context).muted,
                                 ),
                               ),
                             ),

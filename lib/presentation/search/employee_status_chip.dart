@@ -11,8 +11,8 @@ class EmployeeStatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final background = employee.isWorking ? AppColors.workingWash : AppColors.idleWash;
-    final foreground = employee.isWorking ? AppColors.working : AppColors.idle;
+    final background = employee.isWorking ? AppColors.of(context).workingWash : AppColors.of(context).idleWash;
+    final foreground = employee.isWorking ? AppColors.of(context).working : AppColors.of(context).idle;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: onDark ? Colors.white.withValues(alpha: 0.16) : background,
