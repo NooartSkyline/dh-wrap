@@ -4,15 +4,23 @@ import '../../core/theme/app_theme.dart';
 import '../../domain/entities/employee.dart';
 
 class EmployeeStatusChip extends StatelessWidget {
-  const EmployeeStatusChip({super.key, required this.employee, this.onDark = false});
+  const EmployeeStatusChip({
+    super.key,
+    required this.employee,
+    this.onDark = false,
+  });
 
   final Employee employee;
   final bool onDark;
 
   @override
   Widget build(BuildContext context) {
-    final background = employee.isWorking ? AppColors.of(context).workingWash : AppColors.of(context).idleWash;
-    final foreground = employee.isWorking ? AppColors.of(context).working : AppColors.of(context).idle;
+    final background = employee.isWorking
+        ? AppColors.of(context).workingWash
+        : AppColors.of(context).idleWash;
+    final foreground = employee.isWorking
+        ? AppColors.of(context).working
+        : AppColors.of(context).idle;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: onDark ? Colors.white.withValues(alpha: 0.16) : background,

@@ -1,6 +1,9 @@
+import 'package:dh_wrap/data/db/app_database.dart';
+import 'package:dh_wrap/data/search/search_history_store.dart';
 import 'package:dh_wrap/domain/entities/employee.dart';
 import 'package:dh_wrap/domain/entities/employee_page.dart';
 import 'package:dh_wrap/domain/entities/employee_search_query.dart';
+import 'package:dh_wrap/domain/entities/search_history_record.dart';
 import 'package:dh_wrap/domain/entities/employee_status_filter.dart';
 import 'package:dh_wrap/domain/repositories/employee_repository.dart';
 import 'package:dh_wrap/domain/usecases/count_working_employees.dart';
@@ -172,6 +175,99 @@ void main() {
     expect(find.textContaining('อ่านฐานข้อมูลไม่สำเร็จ'), findsOneWidget);
     expect(find.text('ลองใหม่'), findsOneWidget);
   });
+
+  testWidgets('ค้นสำเร็จแล้วล้างคำค้นจะเห็นประวัติ และกดแล้วค้นซ้ำ', (
+    tester,
+  ) async {
+    final repository = _FakeEmployeeRepository();
+    final history = _MemorySearchHistory();
+    final bloc = SearchBloc(
+      searchEmployees: SearchEmployees(repository),
+      countWorkingEmployees: CountWorkingEmployees(repository),
+      readDataUpdatedAt: ReadDataUpdatedAt(repository),
+      listEmployeeBranches: ListEmployeeBranches(repository),
+      searchHistory: history,
+      debounce: Duration.zero,
+    );
+    addTearDown(bloc.close);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: BlocProvider.value(value: bloc, child: const SearchScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    repository.page = EmployeePage(items: [sampleEmployee()], hasMore: false);
+    await tester.enterText(
+      find.byKey(const Key('employee-search-field')),
+      'เกมส์',
+    );
+    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(repository.searchCalls, 1);
+
+    await tester.tap(find.byTooltip('ล้างคำค้น'));
+    await tester.pumpAndSettle();
+    expect(find.text('ค้นหาล่าสุด'), findsOneWidget);
+    expect(find.text('เกมส์'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('search-history-1')));
+    await tester.pumpAndSettle();
+    expect(repository.searchCalls, 2);
+    expect(repository.lastQuery?.text, 'เกมส์');
+    expect(repository.lastQuery?.status, EmployeeStatusFilter.working);
+    expect(find.text('พงศ์พิสิทธิ์ เหินชัย'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('ล้างคำค้น'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('search-history-delete-1')));
+    await tester.pumpAndSettle();
+    expect(find.text('ค้นหาล่าสุด'), findsNothing);
+    expect(find.text('เกมส์'), findsNothing);
+    expect(repository.searchCalls, 2);
+  });
+}
+
+class _MemorySearchHistory extends SearchHistoryStore {
+  _MemorySearchHistory() : super(AppDatabase());
+
+  final records = <SearchHistoryRecord>[];
+
+  @override
+  Future<void> add({
+    required String query,
+    required EmployeeStatusFilter status,
+    required String? branchLabel,
+  }) async {
+    final text = query.trim();
+    final branch = branchLabel?.trim();
+    final label = branch == null || branch.isEmpty ? null : branch;
+    records.removeWhere(
+      (item) =>
+          item.query == text &&
+          item.status == status &&
+          item.branchLabel == label,
+    );
+    records.insert(
+      0,
+      SearchHistoryRecord(
+        id: records.length + 1,
+        query: text,
+        status: status,
+        branchLabel: label,
+        searchedAt: DateTime(2026, 11, 12, 9, 31),
+      ),
+    );
+  }
+
+  @override
+  Future<void> delete(int id) async {
+    records.removeWhere((item) => item.id == id);
+  }
+
+  @override
+  Future<List<SearchHistoryRecord>> list() async => List.of(records);
 }
 
 class _FakeEmployeeRepository implements EmployeeRepository {

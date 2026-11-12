@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 
 import '../../domain/entities/employee.dart';
 import '../../domain/entities/employee_status_filter.dart';
+import '../../domain/entities/search_history_record.dart';
 
 enum SearchViewStatus { idle, loading, loaded, empty, failure }
 
@@ -19,6 +20,8 @@ class SearchState extends Equatable {
     this.activeCount = 0,
     this.activeCountReady = false,
     this.dataUpdatedAt,
+    this.searchHistory = const [],
+    this.searchHistoryError,
   });
 
   final String query;
@@ -33,6 +36,8 @@ class SearchState extends Equatable {
   final int activeCount;
   final bool activeCountReady;
   final DateTime? dataUpdatedAt;
+  final List<SearchHistoryRecord> searchHistory;
+  final String? searchHistoryError;
 
   bool get canSearch {
     if (query.trim().isNotEmpty) return true;
@@ -57,6 +62,10 @@ class SearchState extends Equatable {
     bool? activeCountReady,
     DateTime? dataUpdatedAt,
     bool setDataUpdatedAt = false,
+    List<SearchHistoryRecord>? searchHistory,
+    bool setSearchHistory = false,
+    String? searchHistoryError,
+    bool setSearchHistoryError = false,
   }) {
     return SearchState(
       query: query ?? this.query,
@@ -73,6 +82,12 @@ class SearchState extends Equatable {
       activeCount: activeCount ?? this.activeCount,
       activeCountReady: activeCountReady ?? this.activeCountReady,
       dataUpdatedAt: setDataUpdatedAt ? dataUpdatedAt : this.dataUpdatedAt,
+      searchHistory: setSearchHistory
+          ? (searchHistory ?? const [])
+          : this.searchHistory,
+      searchHistoryError: setSearchHistoryError
+          ? searchHistoryError
+          : this.searchHistoryError,
     );
   }
 
@@ -90,5 +105,7 @@ class SearchState extends Equatable {
     activeCount,
     activeCountReady,
     dataUpdatedAt,
+    searchHistory,
+    searchHistoryError,
   ];
 }

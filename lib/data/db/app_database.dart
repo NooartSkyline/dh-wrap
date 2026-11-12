@@ -18,7 +18,7 @@ class AppDatabase {
     final opened = await factory.openDatabase(
       path,
       options: OpenDatabaseOptions(
-        version: 2,
+        version: 3,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       ),
@@ -79,10 +79,12 @@ class AppDatabase {
       )
     ''');
     await _createUpdateHistory(db);
+    await _createSearchHistory(db);
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) await _createUpdateHistory(db);
+    if (oldVersion < 3) await _createSearchHistory(db);
   }
 
   Future<void> _createUpdateHistory(Database db) {
@@ -94,6 +96,18 @@ class AppDatabase {
         added_count INTEGER NOT NULL,
         removed_count INTEGER NOT NULL,
         current_count INTEGER NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _createSearchHistory(Database db) {
+    return db.execute('''
+      CREATE TABLE IF NOT EXISTS search_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        query_text TEXT NOT NULL,
+        status TEXT NOT NULL,
+        branch_label TEXT NOT NULL DEFAULT '',
+        searched_at TEXT NOT NULL
       )
     ''');
   }

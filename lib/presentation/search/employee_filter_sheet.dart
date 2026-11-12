@@ -146,8 +146,12 @@ class _EmployeeFilterSheetState extends State<EmployeeFilterSheet> {
                         value: status,
                         dense: true,
                         visualDensity: VisualDensity.compact,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        tileColor: status == _status ? AppColors.of(context).mint : null,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        tileColor: status == _status
+                            ? AppColors.of(context).mint
+                            : null,
                         title: Text(status.label),
                         selected: status == _status,
                       ),
@@ -218,7 +222,9 @@ class _EmployeeFilterSheetState extends State<EmployeeFilterSheet> {
                   backgroundColor: AppColors.of(context).ink,
                   foregroundColor: Colors.white,
                   minimumSize: const Size.fromHeight(52),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
                 onPressed: _confirm,
                 child: const Text('ยืนยัน'),

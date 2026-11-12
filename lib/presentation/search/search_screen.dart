@@ -8,6 +8,7 @@ import '../../data/sync/employee_snapshot_source.dart';
 import '../../data/update/update_history_store.dart';
 import '../../data/usage/usage_hint_store.dart';
 import '../../domain/entities/employee.dart';
+import '../../domain/entities/search_history_record.dart';
 import '../../domain/repositories/employee_repository.dart';
 import '../../domain/usecases/import_employees.dart';
 import '../../domain/usecases/list_employee_ids.dart';
@@ -42,6 +43,7 @@ class _SearchScreenState extends State<SearchScreen> {
   final _queryController = TextEditingController();
   final _scrollController = ScrollController();
   var _showUsageHint = false;
+  var _applyingQuery = false;
 
   @override
   void initState() {
@@ -158,6 +160,7 @@ class _SearchScreenState extends State<SearchScreen> {
             onFilter: _openFilters,
             onUpdate: _openUpdate,
             onChanged: (value) {
+              if (_applyingQuery) return;
               context.read<SearchBloc>().add(SearchQueryChanged(value));
             },
             onClear: () {
@@ -184,13 +187,39 @@ class _SearchScreenState extends State<SearchScreen> {
                     Expanded(
                       child: BlocConsumer<SearchBloc, SearchState>(
                         listener: (context, state) {
+                          if (_queryController.text != state.query) {
+                            _applyingQuery = true;
+                            _queryController.value = TextEditingValue(
+                              text: state.query,
+                              selection: TextSelection.collapsed(
+                                offset: state.query.length,
+                              ),
+                            );
+                            _applyingQuery = false;
+                          }
                           WidgetsBinding.instance.addPostFrameCallback((_) {
                             _maybeLoadMore();
                           });
                         },
                         builder: (context, state) {
                           return switch (state.view) {
-                            SearchViewStatus.idle => _Idle(state: state),
+                            SearchViewStatus.idle => _Idle(
+                              state: state,
+                              onSelect: (record) {
+                                context.read<SearchBloc>().add(
+                                  SearchHistoryChosen(
+                                    query: record.query,
+                                    status: record.status,
+                                    branchLabel: record.branchLabel,
+                                  ),
+                                );
+                              },
+                              onDelete: (record) {
+                                context.read<SearchBloc>().add(
+                                  SearchHistoryDeleted(record.id),
+                                );
+                              },
+                            ),
                             SearchViewStatus.loading => Center(
                               child: CircularProgressIndicator(
                                 color: AppColors.of(context).leaf,
@@ -434,50 +463,140 @@ class _FilterChips extends StatelessWidget {
 }
 
 class _Idle extends StatelessWidget {
-  const _Idle({required this.state});
+  const _Idle({
+    required this.state,
+    required this.onSelect,
+    required this.onDelete,
+  });
+
+  final SearchState state;
+  final ValueChanged<SearchHistoryRecord> onSelect;
+  final ValueChanged<SearchHistoryRecord> onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final history = state.searchHistory;
+    final historyError = state.searchHistoryError;
+    if (history.isEmpty && historyError == null) {
+      return Center(child: _IdleHint(state: state));
+    }
+    final colors = AppColors.of(context);
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(8, 12, 8, 24),
+      children: [
+        _IdleHint(state: state),
+        if (historyError != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Text(
+              historyError,
+              style: TextStyle(color: colors.idle, height: 1.4),
+            ),
+          ),
+        if (history.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: Text(
+              'ค้นหาล่าสุด',
+              style: TextStyle(
+                color: colors.ink,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          for (final record in history)
+            ListTile(
+              key: Key('search-history-${record.id}'),
+              leading: Icon(Icons.history, color: colors.muted),
+              title: Text(
+                _historyTitle(record),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: colors.ink,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              subtitle: Text(
+                _historySubtitle(record),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: colors.muted),
+              ),
+              trailing: IconButton(
+                key: Key('search-history-delete-${record.id}'),
+                tooltip: 'ลบ',
+                onPressed: () => onDelete(record),
+                icon: Icon(Icons.delete_outline, color: colors.muted),
+              ),
+              onTap: () => onSelect(record),
+            ),
+        ],
+      ],
+    );
+  }
+
+  String _historyTitle(SearchHistoryRecord record) {
+    final query = record.query.trim();
+    if (query.isNotEmpty) return query;
+    return record.branchLabel ?? '';
+  }
+
+  String _historySubtitle(SearchHistoryRecord record) {
+    final parts = <String>[record.status.label];
+    final branch = record.branchLabel?.trim();
+    if (record.query.trim().isNotEmpty && branch != null && branch.isNotEmpty) {
+      parts.add(branch);
+    }
+    parts.add(updateHistoryWhen(record.searchedAt));
+    return parts.join(' · ');
+  }
+}
+
+class _IdleHint extends StatelessWidget {
+  const _IdleHint({required this.state});
 
   final SearchState state;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 76,
-              height: 76,
-              decoration: BoxDecoration(
-                color: AppColors.of(context).mint,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.groups_outlined,
-                size: 36,
-                color: AppColors.of(context).ink,
-              ),
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 76,
+            height: 76,
+            decoration: BoxDecoration(
+              color: AppColors.of(context).mint,
+              shape: BoxShape.circle,
             ),
-            const SizedBox(height: 20),
-            if (state.activeCountReady)
-              Text(
-                'ที่ปฏิบัติงาน ${groupDigits(state.activeCount)} คน',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.titleMedium,
-              ),
-            const SizedBox(height: 8),
+            child: Icon(
+              Icons.groups_outlined,
+              size: 36,
+              color: AppColors.of(context).ink,
+            ),
+          ),
+          const SizedBox(height: 20),
+          if (state.activeCountReady)
             Text(
-              'พิมพ์ชื่อ ชื่อเล่น หรือรหัส หรือเลือกสาขา',
+              'ที่ปฏิบัติงาน ${groupDigits(state.activeCount)} คน',
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: AppColors.of(context).muted,
-                height: 1.4,
-              ),
+              style: theme.textTheme.titleMedium,
             ),
-          ],
-        ),
+          const SizedBox(height: 8),
+          Text(
+            'พิมพ์ชื่อ ชื่อเล่น หรือรหัส หรือเลือกสาขา',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: AppColors.of(context).muted,
+              height: 1.4,
+            ),
+          ),
+        ],
       ),
     );
   }

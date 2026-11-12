@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/error_text.dart';
+import '../../data/search/search_history_store.dart';
 import '../../domain/entities/employee_search_query.dart';
 import '../../domain/usecases/count_working_employees.dart';
 import '../../domain/usecases/list_employee_branches.dart';
@@ -17,16 +18,20 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     required CountWorkingEmployees countWorkingEmployees,
     required ReadDataUpdatedAt readDataUpdatedAt,
     required ListEmployeeBranches listEmployeeBranches,
+    SearchHistoryStore? searchHistory,
     this.debounce = const Duration(milliseconds: 300),
   }) : _searchEmployees = searchEmployees,
        _countWorkingEmployees = countWorkingEmployees,
        _readDataUpdatedAt = readDataUpdatedAt,
        _listEmployeeBranches = listEmployeeBranches,
+       _searchHistory = searchHistory,
        super(const SearchState()) {
     on<SearchOpened>(_onOpened);
     on<SearchQueryChanged>(_onQueryChanged);
     on<SearchSubmitted>(_onSubmitted);
     on<SearchFiltersConfirmed>(_onFiltersConfirmed);
+    on<SearchHistoryChosen>(_onHistoryChosen);
+    on<SearchHistoryDeleted>(_onHistoryDeleted);
     on<SearchNextPageRequested>(_onNextPage);
     on<SearchRetryRequested>(_onRetry);
   }
@@ -35,6 +40,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
   final CountWorkingEmployees _countWorkingEmployees;
   final ReadDataUpdatedAt _readDataUpdatedAt;
   final ListEmployeeBranches _listEmployeeBranches;
+  final SearchHistoryStore? _searchHistory;
   final Duration debounce;
 
   Timer? _debounce;
@@ -76,6 +82,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
         );
       }
     }
+    await _loadSearchHistory(emit);
   }
 
   void _onQueryChanged(SearchQueryChanged event, Emitter<SearchState> emit) {
@@ -128,6 +135,55 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       ),
     );
     await _runSearch(emit, reset: true);
+  }
+
+  Future<void> _onHistoryChosen(
+    SearchHistoryChosen event,
+    Emitter<SearchState> emit,
+  ) async {
+    _debounce?.cancel();
+    _requestId++;
+    final branch = event.branchLabel?.trim();
+    final clearBranch = branch == null || branch.isEmpty;
+    emit(
+      state.copyWith(
+        query: event.query,
+        statusFilter: event.status,
+        branchLabel: clearBranch ? null : branch,
+        clearBranch: clearBranch,
+        loadingMore: false,
+        clearLoadMoreError: true,
+      ),
+    );
+    await _runSearch(emit, reset: true);
+  }
+
+  Future<void> _onHistoryDeleted(
+    SearchHistoryDeleted event,
+    Emitter<SearchState> emit,
+  ) async {
+    final history = _searchHistory;
+    if (history == null || isClosed) return;
+    try {
+      await history.delete(event.id);
+      final records = await history.list();
+      if (isClosed) return;
+      emit(
+        state.copyWith(
+          searchHistory: records,
+          setSearchHistory: true,
+          setSearchHistoryError: true,
+        ),
+      );
+    } catch (error) {
+      if (isClosed) return;
+      emit(
+        state.copyWith(
+          searchHistoryError: errorText(error),
+          setSearchHistoryError: true,
+        ),
+      );
+    }
   }
 
   Future<void> _onNextPage(
@@ -219,6 +275,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
           clearError: true,
         ),
       );
+      if (reset) await _rememberSearch(emit, requestId);
     } catch (error) {
       if (isClosed || requestId != _requestId) return;
       if (reset) {
@@ -234,6 +291,59 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
         return;
       }
       emit(state.copyWith(loadingMore: false, loadMoreError: errorText(error)));
+    }
+  }
+
+  Future<void> _loadSearchHistory(Emitter<SearchState> emit) async {
+    final history = _searchHistory;
+    if (history == null || isClosed) return;
+    try {
+      final records = await history.list();
+      if (isClosed) return;
+      emit(
+        state.copyWith(
+          searchHistory: records,
+          setSearchHistory: true,
+          setSearchHistoryError: true,
+        ),
+      );
+    } catch (error) {
+      if (isClosed) return;
+      emit(
+        state.copyWith(
+          searchHistoryError: errorText(error),
+          setSearchHistoryError: true,
+        ),
+      );
+    }
+  }
+
+  Future<void> _rememberSearch(Emitter<SearchState> emit, int requestId) async {
+    final history = _searchHistory;
+    if (history == null || isClosed || requestId != _requestId) return;
+    try {
+      await history.add(
+        query: state.query,
+        status: state.statusFilter,
+        branchLabel: state.branchLabel,
+      );
+      final records = await history.list();
+      if (isClosed || requestId != _requestId) return;
+      emit(
+        state.copyWith(
+          searchHistory: records,
+          setSearchHistory: true,
+          setSearchHistoryError: true,
+        ),
+      );
+    } catch (error) {
+      if (isClosed || requestId != _requestId) return;
+      emit(
+        state.copyWith(
+          searchHistoryError: errorText(error),
+          setSearchHistoryError: true,
+        ),
+      );
     }
   }
 }

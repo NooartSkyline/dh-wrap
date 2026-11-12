@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'data/search/search_history_store.dart';
 import 'data/theme/theme_seed_store.dart';
 import 'data/update/update_history_store.dart';
 import 'data/usage/usage_hint_store.dart';
@@ -22,6 +23,7 @@ class DhWrapApp extends StatelessWidget {
     required this.themeSeeds,
     required this.usageHints,
     required this.updateHistory,
+    required this.searchHistory,
     required this.initialSeed,
   });
 
@@ -29,6 +31,7 @@ class DhWrapApp extends StatelessWidget {
   final ThemeSeedStore themeSeeds;
   final UsageHintStore usageHints;
   final UpdateHistoryStore updateHistory;
+  final SearchHistoryStore searchHistory;
   final Color initialSeed;
 
   @override
@@ -47,6 +50,7 @@ class DhWrapApp extends StatelessWidget {
                 countWorkingEmployees: CountWorkingEmployees(repository),
                 readDataUpdatedAt: ReadDataUpdatedAt(repository),
                 listEmployeeBranches: ListEmployeeBranches(repository),
+                searchHistory: searchHistory,
               ),
               child: BlocBuilder<ThemeCubit, Color>(
                 builder: (context, seed) {

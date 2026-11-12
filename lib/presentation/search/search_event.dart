@@ -30,13 +30,40 @@ class SearchSubmitted extends SearchEvent {
 }
 
 class SearchFiltersConfirmed extends SearchEvent {
-  const SearchFiltersConfirmed({required this.status, required this.branchLabel});
+  const SearchFiltersConfirmed({
+    required this.status,
+    required this.branchLabel,
+  });
 
   final EmployeeStatusFilter status;
   final String? branchLabel;
 
   @override
   List<Object?> get props => [status, branchLabel];
+}
+
+class SearchHistoryChosen extends SearchEvent {
+  const SearchHistoryChosen({
+    required this.query,
+    required this.status,
+    required this.branchLabel,
+  });
+
+  final String query;
+  final EmployeeStatusFilter status;
+  final String? branchLabel;
+
+  @override
+  List<Object?> get props => [query, status, branchLabel];
+}
+
+class SearchHistoryDeleted extends SearchEvent {
+  const SearchHistoryDeleted(this.id);
+
+  final int id;
+
+  @override
+  List<Object?> get props => [id];
 }
 
 class SearchNextPageRequested extends SearchEvent {
